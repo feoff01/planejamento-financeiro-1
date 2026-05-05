@@ -26,18 +26,19 @@ type NavItem = {
   icon: React.ElementType;
   label: string;
   locked: boolean;
+  href?: string;
 };
 
 const navItems: NavItem[] = [
-  { icon: Target, label: "Planejamento Financeiro", locked: false },
+  { icon: Target, label: "Carteira Ideal", locked: false, href: "/carteira-ideal" },
   { icon: LayoutDashboard, label: "Dashboard", locked: true },
   { icon: Wallet, label: "Minha Carteira", locked: true },
   { icon: Briefcase, label: "Carteiras Recomendadas", locked: true },
   { icon: ScanSearch, label: "Screening de Ações", locked: true },
   { icon: ChartNoAxesCombined, label: "Otimizador Markowitz", locked: true },
   { icon: MessageSquareText, label: "Consultor IA", locked: true },
-  { icon: CreditCard, label: "Planos", locked: false },
-  { icon: LifeBuoy, label: "Suporte", locked: false },
+  { icon: CreditCard, label: "Planos", locked: false, href: "/planos" },
+  { icon: LifeBuoy, label: "Suporte", locked: false, href: "/suporte" },
 ];
 
 export function Sidebar() {
@@ -48,7 +49,6 @@ export function Sidebar() {
     AuthService.getMe()
       .then((user) => {
         if (user?.user_metadata?.full_name) {
-          // Extrai apenas o primeiro nome para não quebrar o layout
           const firstName = user.user_metadata.full_name.split(" ")[0];
           setUserName(firstName);
         } else {
@@ -59,7 +59,7 @@ export function Sidebar() {
   }, []);
 
   return (
-    <aside className="fixed top-0 left-0 h-full w-64 bg-surface border-r border-white/5 flex flex-col z-40 pt-6 pb-8">
+    <aside className="hidden md:flex fixed top-0 left-0 h-full w-64 bg-surface border-r border-white/5 flex-col z-40 pt-6 pb-8">
       {/* Logo */}
       <div className="px-6 mb-10 flex items-center gap-2.5">
         <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-orange-600 rounded-lg flex items-center justify-center shrink-0">
@@ -76,6 +76,25 @@ export function Sidebar() {
           const Icon = item.icon;
           const isActive = !item.locked;
 
+          const ItemContent = (
+            <div
+              className={`
+                flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+                ${isActive
+                  ? "hover:bg-primary-500/10 hover:text-primary-400 text-zinc-300 cursor-pointer"
+                  : "text-zinc-600 cursor-not-allowed select-none"
+                }
+                ${item.label === "Carteira Ideal" ? "bg-primary-500/10 text-primary-400 border border-primary-500/20" : "border border-transparent"}
+              `}
+            >
+              <Icon size={16} className={isActive && item.label === "Carteira Ideal" ? "text-primary-400" : (isActive ? "text-zinc-400" : "text-zinc-700")} />
+              <span className="flex-1">{item.label}</span>
+              {item.locked && (
+                <Lock size={12} className="text-zinc-700 shrink-0" />
+              )}
+            </div>
+          );
+
           return (
             <motion.div
               key={item.label}
@@ -83,22 +102,13 @@ export function Sidebar() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 }}
             >
-              <div
-                className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-                  ${isActive
-                    ? "hover:bg-primary-500/10 hover:text-primary-400 text-zinc-300 cursor-pointer"
-                    : "text-zinc-600 cursor-not-allowed select-none"
-                  }
-                  ${item.label === "Planejamento Financeiro" ? "bg-primary-500/10 text-primary-400 border border-primary-500/20" : "border border-transparent"}
-                `}
-              >
-                <Icon size={16} className={isActive && item.label === "Planejamento Financeiro" ? "text-primary-400" : (isActive ? "text-zinc-400" : "text-zinc-700")} />
-                <span className="flex-1">{item.label}</span>
-                {item.locked && (
-                  <Lock size={12} className="text-zinc-700 shrink-0" />
-                )}
-              </div>
+              {isActive && item.href ? (
+                <Link href={item.href}>
+                  {ItemContent}
+                </Link>
+              ) : (
+                ItemContent
+              )}
             </motion.div>
           );
         })}

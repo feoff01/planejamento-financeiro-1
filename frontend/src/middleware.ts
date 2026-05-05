@@ -13,18 +13,17 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('sb_token')?.value;
 
   // 1. Proteger rotas privadas (Route Guard)
-  // Se tentar acessar o dashboard sem o cookie da sessão, manda pro login
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    if (!token) {
-      return NextResponse.redirect(new URL('/auth/login', request.url));
-    }
+  const isProtectedRoute = request.nextUrl.pathname.startsWith('/dashboard') || 
+                           request.nextUrl.pathname.startsWith('/carteira-ideal');
+  
+  if (isProtectedRoute && !token) {
+    return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
   // 2. Prevenir acesso a rotas públicas quando já logado
-  // Se já tem o token, não faz sentido acessar login/cadastro novamente
   if (request.nextUrl.pathname.startsWith('/auth/login') || request.nextUrl.pathname.startsWith('/auth/cadastro')) {
     if (token) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+      return NextResponse.redirect(new URL('/carteira-ideal', request.url));
     }
   }
 
@@ -35,6 +34,7 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
+    '/carteira-ideal/:path*',
     '/auth/login',
     '/auth/cadastro'
   ],

@@ -2,12 +2,9 @@
 
 import { useForm, Controller, Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import { Etapa1Schema, Etapa1Data } from "@/schemas/diagnosticoSchemas";
-
-const OUTRAS_RENDAS = ["Aluguéis", "Dividendos", "Freelas", "Pensão", "Aposentadoria", "Negócio próprio"];
-const MAIORES_GASTOS = ["Moradia", "Alimentação", "Transporte", "Saúde", "Educação", "Lazer", "Dívidas", "Outros"];
 
 type Props = { onNext: (data: Etapa1Data) => void };
 
@@ -50,27 +47,54 @@ function CurrencyInput({ id, label, control, name, error }: { id: string; label:
 }
 
 export function Etapa1Form({ onNext }: Props) {
-  const { register, handleSubmit, watch, setValue, control, formState: { errors } } = useForm<Etapa1Data>({
+  const { handleSubmit, watch, control, setValue, formState: { errors } } = useForm<Etapa1Data>({
     resolver: zodResolver(Etapa1Schema),
-    defaultValues: { outras_rendas: [], maiores_gastos: [] },
+    defaultValues: {
+      idade: undefined,
+      renda_mensal: undefined,
+      gastos_mensais: undefined,
+      aporte_mensal: 0,
+    }
   });
 
   const renda = watch("renda_mensal") || 0;
   const gastos = watch("gastos_mensais") || 0;
+  const aporte = watch("aporte_mensal") || 0;
   const sobra = renda - gastos;
-  const outrasRendas = watch("outras_rendas") || [];
-  const maioresGastos = watch("maiores_gastos") || [];
+  
+  // Porcentagem calculada para o slider
+  const porcentagemInvestimento = sobra > 0 ? Math.round((aporte / sobra) * 100) : 0;
 
-  const toggleItem = (field: "outras_rendas" | "maiores_gastos", value: string) => {
-    const arr = field === "outras_rendas" ? outrasRendas : maioresGastos;
-    const updated = arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
-    setValue(field, updated);
+  const handleSliderChange = (pct: number) => {
+    const valor = Math.round(sobra * (pct / 100));
+    setValue("aporte_mensal", valor);
   };
 
   const onSubmit = (data: Etapa1Data) => onNext(data);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Campo Idade */}
+      <div className="max-w-[120px]">
+        <label htmlFor="idade" className="block text-sm font-medium text-zinc-300 mb-1.5">Sua idade</label>
+        <Controller
+          name="idade"
+          control={control}
+          render={({ field: { onChange, value, ref } }) => (
+            <input
+              id="idade"
+              ref={ref}
+              type="number"
+              value={value || ""}
+              onChange={(e) => onChange(e.target.value === "" ? undefined : Number(e.target.value))}
+              className="w-full px-4 py-3 rounded-xl bg-surface-light border border-border text-white placeholder-zinc-600 text-sm focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all"
+              placeholder="0"
+            />
+          )}
+        />
+        {errors.idade && <p className="mt-1.5 text-xs text-red-400">{errors.idade.message}</p>}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <CurrencyInput
           id="renda_mensal"
@@ -81,71 +105,64 @@ export function Etapa1Form({ onNext }: Props) {
         />
         <CurrencyInput
           id="gastos_mensais"
-          label="Gastos mensais totais"
+          label="Gastos mensais totais (incluindo dívidas)"
           name="gastos_mensais"
           control={control}
           error={errors.gastos_mensais}
         />
       </div>
 
-      {/* Sobra mensal em tempo real */}
-      {renda > 0 && gastos > 0 && (
+      {/* Sobra mensal e Slider de Investimento */}
+      {renda > 0 && gastos > 0 && sobra > 0 ? (
         <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`px-4 py-3 rounded-xl border text-sm font-medium ${
-            sobra >= 0
-              ? "bg-green-500/10 border-green-500/20 text-green-400"
-              : "bg-red-500/10 border-red-500/20 text-red-400"
-          }`}
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="space-y-6 p-5 rounded-2xl bg-primary-500/5 border border-primary-500/20"
         >
-          {sobra >= 0
-            ? `✓ Você tem R$ ${sobra.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} disponíveis para investir por mês.`
-            : `⚠ Seus gastos superam sua renda em R$ ${Math.abs(sobra).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}.`}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-zinc-400 font-medium uppercase tracking-wider mb-1">Capacidade de Investimento</p>
+              <h3 className="text-xl font-bold text-white">R$ {sobra.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</h3>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-zinc-400 font-medium uppercase tracking-wider mb-1">Valor do Aporte</p>
+              <h3 className="text-xl font-bold text-primary-400">R$ {aporte.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</h3>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex justify-between items-end">
+              <label className="text-sm font-semibold text-zinc-300">
+                Quanto desse valor você quer investir?
+              </label>
+              <span className="text-lg font-bold text-primary-500">{porcentagemInvestimento}%</span>
+            </div>
+            
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              value={porcentagemInvestimento}
+              onChange={(e) => handleSliderChange(Number(e.target.value))}
+              className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-primary-500"
+            />
+            
+            <div className="flex justify-between text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
+              <span>Mínimo (0%)</span>
+              <span>Tudo (100%)</span>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-zinc-500 leading-relaxed italic">
+            * O restante (R$ {(sobra - aporte).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}) ficará reservado para seu lazer ou reserva de contingência.
+          </p>
         </motion.div>
+      ) : renda > 0 && gastos > 0 && sobra <= 0 && (
+        <div className="px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/5 text-sm font-medium text-red-400">
+          ⚠ Seus gastos superam sua renda. Para começar a investir com a Synapta, você precisará equilibrar suas contas primeiro.
+        </div>
       )}
-
-      {/* Outras fontes de renda */}
-      <div>
-        <p className="text-sm font-medium text-zinc-300 mb-2">Outras fontes de renda <span className="text-zinc-600">(opcional)</span></p>
-        <div className="flex flex-wrap gap-2">
-          {OUTRAS_RENDAS.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => toggleItem("outras_rendas", item)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer ${
-                outrasRendas.includes(item)
-                  ? "bg-primary-500/20 border-primary-500/40 text-primary-400"
-                  : "bg-surface-light border-border text-zinc-500 hover:border-zinc-500"
-              }`}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Maiores gastos */}
-      <div>
-        <p className="text-sm font-medium text-zinc-300 mb-2">Maiores categorias de gasto <span className="text-zinc-600">(opcional)</span></p>
-        <div className="flex flex-wrap gap-2">
-          {MAIORES_GASTOS.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => toggleItem("maiores_gastos", item)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer ${
-                maioresGastos.includes(item)
-                  ? "bg-primary-500/20 border-primary-500/40 text-primary-400"
-                  : "bg-surface-light border-border text-zinc-500 hover:border-zinc-500"
-              }`}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-      </div>
 
       <button
         type="submit"

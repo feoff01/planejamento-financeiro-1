@@ -1,20 +1,10 @@
 import { DiagnosticoInput } from "../domain/diagnosticoSchemas";
 import { DiagnosticoRepository } from "../repositories/DiagnosticoRepository";
+import { CarteiraIdealRepository } from "../repositories/CarteiraIdealRepository";
+import * as Engine from "./CarteiraIdealEngine";
+import { Client, Goal } from "../domain/carteiraIdealSchemas";
 
 type Perfil = "conservador" | "moderado" | "arrojado";
-
-type ResultadoDiagnostico = {
-  perfil: Perfil;
-  pontos: number;
-  alocacao: { renda_fixa: number; acoes: number; fiis: number; reserva: number };
-  alertas: string[];
-};
-
-const ALOCACAO: Record<Perfil, ResultadoDiagnostico["alocacao"]> = {
-  conservador: { renda_fixa: 60, acoes: 25, fiis: 10, reserva: 5 },
-  moderado:    { renda_fixa: 30, acoes: 50, fiis: 15, reserva: 5 },
-  arrojado:    { renda_fixa: 10, acoes: 70, fiis: 15, reserva: 5 },
-};
 
 const PONTOS_REACAO: Record<string, number> = {
   vender_tudo: 0, espera_preocupado: 1, mantenho_tranquilo: 2, compra_mais: 3,
@@ -28,66 +18,161 @@ const PONTOS_RISCO: Record<string, number> = {
 
 /**
  * DiagnosticoService (Camada 2 - Use Case)
- * Toda a inteligência de negócio fica aqui, isolada do banco e da HTTP layer.
+ * Agora unifica o cálculo de perfil com o Motor Real (Monte Carlo).
+ * Isso garante que o Output Genérico e o Específico sejam 100% consistentes.
  */
 export class DiagnosticoService {
   private repo: DiagnosticoRepository;
+  private carteiraRepo: CarteiraIdealRepository;
 
   constructor() {
     this.repo = new DiagnosticoRepository();
+    this.carteiraRepo = new CarteiraIdealRepository();
   }
 
   /**
-   * Calcula o perfil de risco e persiste os dados.
-   * Algoritmo definido em produtos/02-onboarding-diagnostico-financeiro.md
+   * Calcula o perfil de risco, roda o Motor Real e persiste os dados.
    */
-  async processar(userId: string, dados: DiagnosticoInput, token: string): Promise<ResultadoDiagnostico> {
-    // 1. Calcular pontos base
+  async processar(userId: string, dados: DiagnosticoInput, token: string) {
+    // ═══════════════════════════════════════════════════════════════════════════
+    // FASE 1: CALCULAR PERFIL DE RISCO (algoritmo de pontuação)
+    // ═══════════════════════════════════════════════════════════════════════════
     let pontos =
       PONTOS_REACAO[dados.reacao_queda] +
       PONTOS_EXPERIENCIA[dados.experiencia_rv] +
       PONTOS_RISCO[dados.percentual_risco];
 
-    // 2. Bônus por horizonte longo
-    if (dados.horizonte_anos >= 15) pontos += 2;
-    else if (dados.horizonte_anos >= 8) pontos += 1;
+    // Bônus por horizonte longo
+    const horizonteMax = Object.values(dados.detalhes_objetivos || {}).reduce(
+      (max: number, det: any) => Math.max(max, det.horizonte_anos || 0), 0
+    );
+    if (horizonteMax >= 15) pontos += 2;
+    else if (horizonteMax >= 8) pontos += 1;
 
-    // 3. Penalidade por dívidas caras
-    if (dados.tem_dividas && dados.taxa_juros_dividas && dados.taxa_juros_dividas > 15) {
-      pontos -= 2;
-    }
-
-    // 4. Penalidade por reserva insuficiente (< 3 meses)
+    // Penalidade por reserva insuficiente (< 3 meses)
     if (dados.meses_reserva < 3) pontos -= 1;
 
-    // 5. Determinar perfil
+    // Determinar perfil
     const perfil: Perfil =
       pontos <= 3 ? "conservador" : pontos <= 7 ? "moderado" : "arrojado";
 
-    // 6. Gerar alertas personalizados
+    // Gerar alertas personalizados
     const alertas: string[] = [];
     if (dados.meses_reserva < 6) {
-      alertas.push("Sua reserva de emergência está abaixo de 6 meses de gastos. Esse é o primeiro passo antes de investir em renda variável.");
-    }
-    if (dados.tem_dividas && dados.taxa_juros_dividas && dados.taxa_juros_dividas > 15) {
-      alertas.push("Você possui dívidas com juros altos (acima de 15% a.a.). Quitar essas dívidas primeiro pode ter melhor retorno que qualquer investimento.");
-    }
-    if (dados.familia_depende && !dados.tem_seguro_vida) {
-      alertas.push("Sua família depende da sua renda, mas você não tem seguro de vida. Isso é um risco crítico de proteção patrimonial.");
-    }
-    if (!dados.tem_plano_saude) {
-      alertas.push("Não ter plano de saúde pode comprometer sua reserva em uma emergência médica.");
+      alertas.push("Sua reserva de emergência está abaixo de 6 meses de gastos. Esse é o primeiro passo antes de investir em ativos de maior risco.");
     }
 
-    // 7. Persistir no banco passando o token JWT para passar no RLS
+    // Persistir diagnóstico no banco
     await this.repo.upsert(userId, dados, perfil, token);
     await this.repo.marcarOnboardingCompleto(userId, perfil, token);
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // FASE 2: RODAR O MOTOR REAL (Monte Carlo + Alocação de Ativos)
+    // ═══════════════════════════════════════════════════════════════════════════
+    const client: Client = {
+      id: userId,
+      name: "User",
+      age: (dados as any).idade || 30,
+      income: dados.renda_mensal || 0,
+      expenses: dados.gastos_mensais || 0,
+      savings: dados.patrimonio_total || 0,
+      monthly: (dados as any).aporte_mensal || 0,
+      goals: [],
+      emergency: null,
+    };
+
+    // Mapear objetivos detalhados para o formato do Motor
+    const riskLevel = perfil === "arrojado" ? "aggressive" : perfil === "moderado" ? "moderate" : "conservative";
+    const goals: Goal[] = Object.entries(dados.detalhes_objetivos || {}).map(([key, det]: [string, any]) => {
+      const baseGoal = (dados.objetivos_selecionados || []).find((o: any) => o.id === key);
+      return {
+        name: baseGoal ? baseGoal.label : key,
+        target: det.valor || 0,
+        years: det.horizonte_anos || 5,
+        risk: riskLevel,
+        priority: det.prioridade || 3,
+        nature: det.natureza === "need" ? "essential" as const : "aspirational" as const,
+        liquidity: (det.liquidez || "medium") as "low" | "medium" | "high",
+      };
+    });
+
+    const view = Engine.DEFAULT_VIEW;
+    const catalog = Engine.buildCatalog(view);
+
+    let portfolio: any;
+    let mainGoal = goals[0] || { name: "Crescimento", target: 0, years: 10, risk: riskLevel, priority: 3, nature: "aspirational" as const, liquidity: "medium" as const };
+
+    if (goals.length > 1) {
+      const portfolios = goals.map(g => Engine.buildPortfolio(g, client, view, catalog));
+      portfolio = { alloc: Engine.consolidatePortfolios(portfolios, catalog) };
+      mainGoal = goals.reduce((prev, curr) => (curr.priority > prev.priority ? curr : prev));
+    } else {
+      portfolio = Engine.buildPortfolio(mainGoal, client, view, catalog);
+    }
+
+    const risk = Engine.portfolioRisk(portfolio.alloc, view, catalog);
+    const sim = Engine.runMonteCarlo(portfolio.alloc, client.savings, client.monthly, mainGoal.years, mainGoal.target, view, catalog);
+    const trafficLight = Engine.planTrafficLight(client, mainGoal, portfolio, sim, view, catalog, risk);
+    const planScore = Engine.planScore(client, mainGoal, portfolio, sim, view, catalog, risk);
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // FASE 3: AGREGAR ALOCAÇÃO POR CLASSE (para o Output Genérico)
+    // ═══════════════════════════════════════════════════════════════════════════
+    const alocacaoAgregada = { renda_fixa: 0, acoes: 0, liquidez: 0 };
+    for (const [aid, weight] of Object.entries(portfolio.alloc)) {
+      const asset = catalog[aid];
+      if (!asset) continue;
+      if (asset.cat === "selic") {
+        alocacaoAgregada.liquidez += (weight as number);
+      } else if (asset.cat === "equity") {
+        alocacaoAgregada.acoes += (weight as number);
+      } else {
+        alocacaoAgregada.renda_fixa += (weight as number);
+      }
+    }
+
+    // Converter para porcentagem inteira
+    const alocacaoPercent = {
+      renda_fixa: Math.round(alocacaoAgregada.renda_fixa * 100),
+      acoes: Math.round(alocacaoAgregada.acoes * 100),
+      liquidez: Math.round(alocacaoAgregada.liquidez * 100),
+    };
+
+    // Salvar snapshot do portfólio
+    const fullAnalysis = { trafficLight, planScore, enforceLog: portfolio.enforce_log || [] };
+    try {
+      await this.carteiraRepo.saveSnapshot(userId, mainGoal.target, portfolio.alloc, risk, sim, fullAnalysis, token);
+    } catch (e) {
+      console.error("[DiagnosticoService] Erro ao salvar snapshot (não-bloqueante):", e);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // FASE 4: RETORNAR RESULTADO UNIFICADO
+    // ═══════════════════════════════════════════════════════════════════════════
     return {
       perfil,
       pontos,
-      alocacao: ALOCACAO[perfil],
+      alocacao: alocacaoPercent,
       alertas,
+      // Dados expandidos do Motor Real
+      motor: {
+        portfolio: portfolio.alloc,
+        rules_applied: portfolio.rules,
+        risk: {
+          mu: risk.mu,
+          sigma: risk.sigma,
+          sharpe: risk.sharpe,
+          var_95: risk.var_95,
+        },
+        simulation: {
+          prob_meta: sim.prob_meta,
+          prob_perda_real: sim.prob_perda_real,
+          prob_perda_nom: sim.prob_perda_nom,
+          aportado: sim.aportado,
+          median: sim.median,
+        },
+        analysis: fullAnalysis,
+      },
     };
   }
 }

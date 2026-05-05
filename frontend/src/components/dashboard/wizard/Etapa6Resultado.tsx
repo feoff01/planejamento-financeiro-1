@@ -1,68 +1,58 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, AlertTriangle, ArrowRight, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowRight, TrendingUp } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Etapa7PlanoDetalhado } from "./Etapa7PlanoDetalhado";
 
 type Resultado = {
   perfil: "conservador" | "moderado" | "arrojado";
   pontos: number;
-  alocacao: { renda_fixa: number; acoes: number; fiis: number; reserva: number };
+  alocacao: { renda_fixa: number; acoes: number; liquidez: number };
   alertas: string[];
+  motor: {
+    portfolio: Record<string, number>;
+    rules_applied: any;
+    risk: {
+      mu: number;
+      sigma: number;
+      sharpe: number;
+      var_95: number;
+    };
+    simulation: {
+      prob_meta: number | null;
+      prob_perda_real: number;
+      prob_perda_nom: number;
+      aportado: number;
+      median: number;
+    };
+    analysis: any;
+  };
 };
 
-const PERFIL_CONFIG = {
-  conservador: {
-    label: "Conservador",
-    emoji: "🛡️",
-    desc: "Você prioriza segurança e estabilidade. Sua carteira será composta majoritariamente de renda fixa.",
-    color: "text-blue-400",
-    border: "border-blue-500/30",
-    bg: "bg-blue-500/10",
-    retorno: "10–14% a.a.",
-    volatilidade: "6–10%",
-  },
-  moderado: {
-    label: "Moderado",
-    emoji: "⚖️",
-    desc: "Você busca equilíbrio entre segurança e crescimento. Uma carteira diversificada é ideal para você.",
-    color: "text-primary-400",
-    border: "border-primary-500/30",
-    bg: "bg-primary-500/10",
-    retorno: "15–20% a.a.",
-    volatilidade: "12–16%",
-  },
-  arrojado: {
-    label: "Arrojado",
-    emoji: "🚀",
-    desc: "Você aceita maior risco em busca de retornos expressivos. Maior exposição em renda variável.",
-    color: "text-orange-400",
-    border: "border-orange-500/30",
-    bg: "bg-orange-500/10",
-    retorno: "22–30% a.a.",
-    volatilidade: "18–25%",
-  },
+type Props = { 
+  resultado: Resultado;
+  dadosCompletos: any;
 };
 
-const ALOCACAO_LABELS: Record<string, string> = {
-  renda_fixa: "Renda Fixa",
-  acoes: "Ações",
-  fiis: "FIIs",
-  reserva: "Reserva",
-};
-
-const ALOCACAO_COLORS: Record<string, string> = {
-  renda_fixa: "bg-blue-500",
-  acoes: "bg-primary-500",
-  fiis: "bg-emerald-500",
-  reserva: "bg-zinc-500",
-};
-
-type Props = { resultado: Resultado };
-
-export function Etapa6Resultado({ resultado }: Props) {
+export function Etapa6Resultado({ resultado, dadosCompletos }: Props) {
   const router = useRouter();
+  const [showDetalhado, setShowDetalhado] = useState(false);
   const config = PERFIL_CONFIG[resultado.perfil];
+
+  // Os dados do motor já estão carregados — sem nova chamada API
+  const planoCompleto = {
+    portfolio: resultado.motor.portfolio,
+    rules_applied: resultado.motor.rules_applied,
+    risk: resultado.motor.risk,
+    simulation: resultado.motor.simulation,
+    analysis: resultado.motor.analysis,
+  };
+
+  if (showDetalhado) {
+    return <Etapa7PlanoDetalhado plano={planoCompleto} onBack={() => setShowDetalhado(false)} />;
+  }
 
   return (
     <motion.div
@@ -71,7 +61,7 @@ export function Etapa6Resultado({ resultado }: Props) {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      {/* Badge do perfil */}
+      {/* Badge de Perfil */}
       <div className={`flex flex-col items-center text-center px-6 py-6 rounded-2xl border ${config.border} ${config.bg}`}>
         <span className="text-4xl mb-2">{config.emoji}</span>
         <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-1">Seu perfil de investidor</p>
@@ -81,66 +71,149 @@ export function Etapa6Resultado({ resultado }: Props) {
         <div className="flex gap-6 mt-4">
           <div className="text-center">
             <p className="text-xs text-zinc-600 mb-0.5">Retorno esperado</p>
-            <p className={`text-sm font-bold ${config.color}`}>{config.retorno}</p>
+            <p className={`text-sm font-bold ${config.color}`}>
+              {(resultado.motor.risk.mu * 100).toFixed(1)}% a.a.
+            </p>
           </div>
           <div className="text-center">
             <p className="text-xs text-zinc-600 mb-0.5">Volatilidade est.</p>
-            <p className="text-sm font-bold text-zinc-300">{config.volatilidade}</p>
+            <p className="text-sm font-bold text-zinc-300">
+              {(resultado.motor.risk.sigma * 100).toFixed(1)}% a.a.
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-zinc-600 mb-0.5">Sharpe</p>
+            <p className="text-sm font-bold text-zinc-300">
+              {resultado.motor.risk.sharpe.toFixed(2)}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Barra de alocação */}
+      {/* Barra de alocação — derivada do Motor Real */}
       <div>
-        <p className="text-sm font-semibold text-zinc-300 mb-3">Alocação sugerida para você</p>
-        <div className="flex rounded-full overflow-hidden h-4 mb-3">
+        <p className="text-sm font-semibold text-zinc-300 mb-3">Sua Estratégia Macro</p>
+        <div className="flex rounded-full overflow-hidden h-4 mb-3 bg-zinc-800">
           {Object.entries(resultado.alocacao).map(([key, val]) => (
-            <motion.div
-              key={key}
-              initial={{ width: 0 }}
-              animate={{ width: `${val}%` }}
-              transition={{ duration: 1, delay: 0.2 }}
-              className={`${ALOCACAO_COLORS[key]} h-full`}
-              title={`${ALOCACAO_LABELS[key]}: ${val}%`}
-            />
+            val > 0 && (
+              <motion.div
+                key={key}
+                initial={{ width: 0 }}
+                animate={{ width: `${val}%` }}
+                transition={{ duration: 1, delay: 0.2 }}
+                className={`${ALOCACAO_COLORS[key]} h-full`}
+              />
+            )
           ))}
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-3 gap-2">
           {Object.entries(resultado.alocacao).map(([key, val]) => (
-            <div key={key} className="flex items-center gap-1.5">
-              <div className={`w-2.5 h-2.5 rounded-full ${ALOCACAO_COLORS[key]} shrink-0`} />
-              <span className="text-xs text-zinc-400">{ALOCACAO_LABELS[key]}: <strong className="text-zinc-300">{val}%</strong></span>
-            </div>
+            val > 0 && (
+              <div key={key} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-light border border-border/30">
+                <div className={`w-2 h-2 rounded-full ${ALOCACAO_COLORS[key]} shrink-0`} />
+                <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">{ALOCACAO_LABELS[key]}</span>
+                <span className="text-xs text-zinc-200 font-bold ml-auto">{val}%</span>
+              </div>
+            )
           ))}
         </div>
       </div>
+
+      {/* Probabilidade de Meta */}
+      {resultado.motor.simulation.prob_meta !== null && (
+        <div className="px-4 py-3 rounded-xl border border-primary-500/20 bg-primary-500/5">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-zinc-300">Probabilidade de atingir sua meta</p>
+            <p className={`text-lg font-bold ${
+              resultado.motor.simulation.prob_meta >= 0.8 ? "text-emerald-400" :
+              resultado.motor.simulation.prob_meta >= 0.6 ? "text-amber-400" : "text-red-400"
+            }`}>
+              {(resultado.motor.simulation.prob_meta * 100).toFixed(0)}%
+            </p>
+          </div>
+          <p className="text-[10px] text-zinc-500 mt-1">Baseado em 10.000 simulações de Monte Carlo</p>
+        </div>
+      )}
 
       {/* Alertas */}
       {resultado.alertas.length > 0 && (
         <div className="space-y-2">
           <p className="text-sm font-semibold text-zinc-300 flex items-center gap-1.5">
-            <AlertTriangle size={14} className="text-amber-400" /> Alertas prioritários
+            <AlertTriangle size={14} className="text-amber-400" /> Diagnóstico da Saúde Financeira
           </p>
-          {resultado.alertas.map((alerta, i) => (
-            <div key={i} className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
-              <AlertTriangle size={13} className="shrink-0 mt-0.5" />
-              {alerta}
-            </div>
-          ))}
+          <div className="grid grid-cols-1 gap-2">
+            {resultado.alertas.map((alerta, i) => (
+              <div key={i} className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-amber-500/5 border border-amber-500/10 text-[11px] text-amber-200/80">
+                <AlertTriangle size={12} className="shrink-0 mt-0.5 text-amber-500" />
+                {alerta}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* CTA */}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={() => router.push("/dashboard")}
-        className="w-full py-4 rounded-full font-bold text-sm bg-gradient-to-r from-primary-500 to-amber-400 text-black flex items-center justify-center gap-2 glow-effect cursor-pointer transition-all"
-      >
-        <Sparkles size={16} />
-        Acessar minha plataforma
-        <ArrowRight size={16} />
-      </motion.button>
+      {/* CTA para ver Plano Detalhado — agora instantâneo (sem nova chamada API) */}
+      <div className="pt-4 space-y-3">
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setShowDetalhado(true)}
+          className="w-full py-4 rounded-xl font-bold text-sm bg-gradient-to-r from-primary-600 to-amber-500 text-black flex flex-col items-center justify-center gap-0.5 shadow-[0_0_20px_rgba(245,158,11,0.2)] cursor-pointer transition-all"
+        >
+          <div className="flex items-center gap-2">
+            <TrendingUp size={16} />
+            <span>Ver Plano de Ação Detalhado</span>
+            <ArrowRight size={16} />
+          </div>
+          <span className="text-[9px] opacity-70 uppercase tracking-widest font-bold">Ativos reais • Score do plano • Análise completa</span>
+        </motion.button>
+
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="w-full py-3 rounded-xl font-medium text-xs text-zinc-500 hover:text-zinc-300 transition-all text-center"
+        >
+          Pular por enquanto e ir para o Dashboard
+        </button>
+      </div>
     </motion.div>
   );
 }
+
+const PERFIL_CONFIG = {
+  conservador: {
+    label: "Conservador",
+    emoji: "🛡️",
+    color: "text-blue-400",
+    bg: "bg-blue-500/5",
+    border: "border-blue-500/10",
+    desc: "Seu foco é proteger o que já conquistou. Você prefere segurança a retornos altos.",
+  },
+  moderado: {
+    label: "Moderado",
+    emoji: "⚖️",
+    color: "text-primary-400",
+    bg: "bg-primary-500/5",
+    border: "border-primary-500/10",
+    desc: "Você busca equilíbrio. Aceita oscilações pequenas em troca de um crescimento constante.",
+  },
+  arrojado: {
+    label: "Arrojado",
+    emoji: "🚀",
+    color: "text-orange-400",
+    bg: "bg-orange-500/5",
+    border: "border-orange-500/10",
+    desc: "Seu foco é aceleração. Você entende que o risco é o combustível para grandes retornos.",
+  },
+};
+
+const ALOCACAO_COLORS: Record<string, string> = {
+  renda_fixa: "bg-blue-500",
+  acoes: "bg-primary-500",
+  liquidez: "bg-zinc-400",
+};
+
+const ALOCACAO_LABELS: Record<string, string> = {
+  renda_fixa: "Renda Fixa",
+  acoes: "Ações",
+  liquidez: "Liquidez",
+};

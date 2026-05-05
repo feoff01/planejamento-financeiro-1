@@ -37,9 +37,8 @@ export class DiagnosticoRepository {
    * Usa upsert com onConflict em 'user_id' para idempotência.
    */
   async upsert(userId: string, dados: DiagnosticoInput, perfil: string, token: string) {
-    // Extrai valor_reserva para não quebrar o insert no Supabase, 
-    // já que essa coluna não existe nativamente na tabela onboarding_data.
-    const { valor_reserva, ...dadosParaSalvar } = dados;
+    // Extrai campos que não mapeiam diretamente para colunas da tabela
+    const { valor_reserva, objetivos_selecionados, detalhes_objetivos, ...dadosSimples } = dados as any;
 
     const userSupabase = this.getClient(token);
 
@@ -49,7 +48,9 @@ export class DiagnosticoRepository {
         {
           user_id: userId,
           perfil_calculado: perfil,
-          ...dadosParaSalvar,
+          ...dadosSimples,
+          objetivos_selecionados: JSON.stringify(objetivos_selecionados || []),
+          detalhes_objetivos: JSON.stringify(detalhes_objetivos || {}),
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id" }

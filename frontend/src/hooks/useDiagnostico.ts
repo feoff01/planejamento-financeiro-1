@@ -1,12 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { DiagnosticoService } from "@/services/diagnostico/DiagnosticoService";
 import {
-  Etapa1Data,
-  Etapa2Data,
-  Etapa3Data,
-  Etapa4Data,
   Etapa5Data,
   DiagnosticoCompleto,
 } from "@/schemas/diagnosticoSchemas";
@@ -19,18 +16,31 @@ type ResultadoDiagnostico = {
   alocacao: {
     renda_fixa: number;
     acoes: number;
-    fiis: number;
-    reserva: number;
+    liquidez: number;
   };
   alertas: string[];
+  motor: {
+    portfolio: Record<string, number>;
+    rules_applied: any;
+    risk: {
+      mu: number;
+      sigma: number;
+      sharpe: number;
+      var_95: number;
+    };
+    simulation: {
+      prob_meta: number | null;
+      prob_perda_real: number;
+      prob_perda_nom: number;
+      aportado: number;
+      median: number;
+    };
+    analysis: any;
+  };
 };
 
-/**
- * useDiagnostico (Camada 2 - Hook)
- * Orquestra o estado das 6 etapas do wizard e a submissão ao backend.
- * O componente de tela só chama os métodos deste hook.
- */
 export function useDiagnostico() {
+  const router = useRouter();
   const [etapaAtual, setEtapaAtual] = useState(1);
   const [dados, setDados] = useState<DiagnosticoState>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +49,7 @@ export function useDiagnostico() {
 
   const avancarEtapa = (dadosEtapa: Partial<DiagnosticoCompleto>) => {
     setDados((prev) => ({ ...prev, ...dadosEtapa }));
-    setEtapaAtual((prev) => Math.min(prev + 1, 6));
+    setEtapaAtual((prev) => Math.min(prev + 1, 6)); // Agora vai até 6
   };
 
   const voltarEtapa = () => {
@@ -58,10 +68,19 @@ export function useDiagnostico() {
       setEtapaAtual(6); // Etapa 6 = Resultado
     } catch (err: any) {
       setError(err.message);
+      
+      // Se a sessão expirou (401), redireciona para login
+      if (err.status === 401 || err.message.includes("sessão expirada") || err.message.includes("não autenticado")) {
+        setTimeout(() => {
+          router.push("/auth/login");
+        }, 2000);
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  const limparErro = () => setError(null);
 
   return {
     etapaAtual,
@@ -69,6 +88,7 @@ export function useDiagnostico() {
     resultado,
     isLoading,
     error,
+    limparErro,
     avancarEtapa,
     voltarEtapa,
     submeter,

@@ -14,8 +14,9 @@
 - [ ] Sempre que houver um input de valor financeiro, inclua formatação de milhar com pontos em tempo real (ex: em vez de `10000`, exibir `10.000`).
 - [ ] Datas em formato brasileiro: `11 de abril de 2026`.
 - [ ] Textos de erro explicam **o que aconteceu** e **o que o usuário deve fazer**.
-  - ❌ "Erro 422"
-  - ✅ "Não conseguimos salvar. Verifique se todos os campos estão preenchidos."
+  - ❌ "Erro 422" ou "Failed to fetch"
+  - ✅ "Não conseguimos conectar ao servidor. Verifique sua internet e tente novamente."
+- [ ] Erros críticos (que impedem o avanço) devem aparecer em um **Pop-up/Modal padronizado**, garantindo que o usuário perceba o impedimento imediatamente.
 
 ---
 
