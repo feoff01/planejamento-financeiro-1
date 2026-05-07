@@ -19,6 +19,25 @@ type ResultadoDiagnostico = {
     liquidez: number;
   };
   alertas: string[];
+  output_generico?: {
+    status: "base_fragil" | "base_incompleta" | "meta_critica" | "meta_apertada" | "plano_viavel" | "plano_forte";
+    titulo: string;
+    subtitulo: string;
+    prioridade_atual: string;
+    passos: Array<{
+      titulo: string;
+      descricao: string;
+      status: "agora" | "proximo" | "depois";
+    }>;
+    cta_label: string;
+    mostrar_probabilidade_no_topo: boolean;
+    metricas: {
+      probabilidade: number | null;
+      reserva_atual: number;
+      reserva_ideal: number;
+      gap_reserva: number;
+    };
+  };
   motor: {
     portfolio: Record<string, number>;
     rules_applied: any;

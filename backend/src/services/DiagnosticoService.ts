@@ -3,6 +3,7 @@ import { DiagnosticoRepository } from "../repositories/DiagnosticoRepository";
 import { CarteiraIdealRepository } from "../repositories/CarteiraIdealRepository";
 import * as Engine from "./CarteiraIdealEngine";
 import { Client, Goal } from "../domain/carteiraIdealSchemas";
+import { OutputGenericoNarrativeService } from "./OutputGenericoNarrativeService";
 
 type Perfil = "conservador" | "moderado" | "arrojado";
 
@@ -24,10 +25,12 @@ const PONTOS_RISCO: Record<string, number> = {
 export class DiagnosticoService {
   private repo: DiagnosticoRepository;
   private carteiraRepo: CarteiraIdealRepository;
+  private outputGenericoNarrative: OutputGenericoNarrativeService;
 
   constructor() {
     this.repo = new DiagnosticoRepository();
     this.carteiraRepo = new CarteiraIdealRepository();
+    this.outputGenericoNarrative = new OutputGenericoNarrativeService();
   }
 
   /**
@@ -114,6 +117,11 @@ export class DiagnosticoService {
     const sim = Engine.runMonteCarlo(portfolio.alloc, client.savings, client.monthly, mainGoal.years, mainGoal.target, view, catalog);
     const trafficLight = Engine.planTrafficLight(client, mainGoal, portfolio, sim, view, catalog, risk);
     const planScore = Engine.planScore(client, mainGoal, portfolio, sim, view, catalog, risk);
+    const outputGenerico = this.outputGenericoNarrative.build({
+      dados,
+      probabilidade: sim.prob_meta,
+      alertas,
+    });
 
     // ═══════════════════════════════════════════════════════════════════════════
     // FASE 3: AGREGAR ALOCAÇÃO POR CLASSE (para o Output Genérico)
@@ -154,6 +162,7 @@ export class DiagnosticoService {
       pontos,
       alocacao: alocacaoPercent,
       alertas,
+      output_generico: outputGenerico,
       // Dados expandidos do Motor Real
       motor: {
         portfolio: portfolio.alloc,

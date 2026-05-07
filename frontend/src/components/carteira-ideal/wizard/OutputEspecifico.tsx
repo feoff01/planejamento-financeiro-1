@@ -6,12 +6,10 @@ import {
   TrendingUp, 
   PieChart, 
   ShieldCheck, 
-  Activity, 
   CheckCircle2,
   AlertCircle,
   XCircle,
   Trophy,
-  Target,
   Zap
 } from "lucide-react";
 import { 
@@ -20,29 +18,63 @@ import {
   Cell, 
   ResponsiveContainer, 
   Tooltip as ReTooltip,
-  Legend
 } from "recharts";
+import type { ReactNode } from "react";
 
 type Props = {
-  plano: any;
+  plano: PlanoEspecifico;
   onBack: () => void;
+};
+
+type TrafficStatus = "green" | "yellow" | "red";
+
+type TrafficLightInfo = {
+  status: TrafficStatus;
+  title: string;
+  desc: string;
+  value: number;
+};
+
+export type PlanoEspecifico = {
+  portfolio: Record<string, number>;
+  risk: {
+    var_95: number;
+  };
+  simulation: {
+    prob_meta: number | null;
+  };
+  analysis: {
+    planScore: {
+      score: number;
+      rating: string;
+    };
+    trafficLight: Record<string, TrafficLightInfo> & {
+      viability: TrafficLightInfo;
+      portfolio_risk: TrafficLightInfo;
+    };
+  };
+};
+
+type ChartItem = {
+  name: string;
+  value: number;
 };
 
 const COLORS = ["#F59E0B", "#10B981", "#3B82F6", "#8B5CF6", "#EC4899", "#64748B"];
 
-const STATUS_ICONS: Record<string, any> = {
+const STATUS_ICONS: Record<TrafficStatus, ReactNode> = {
   green: <CheckCircle2 size={14} className="text-emerald-500" />,
   yellow: <AlertCircle size={14} className="text-amber-500" />,
   red: <XCircle size={14} className="text-red-500" />,
 };
 
-const STATUS_BGS: Record<string, string> = {
+const STATUS_BGS: Record<TrafficStatus, string> = {
   green: "bg-emerald-500/10 border-emerald-500/20",
   yellow: "bg-amber-500/10 border-amber-500/20",
   red: "bg-red-500/10 border-red-500/20",
 };
 
-export function Etapa7PlanoDetalhado({ plano, onBack }: Props) {
+export function OutputEspecifico({ plano, onBack }: Props) {
   const { portfolio, risk, simulation, analysis } = plano;
 
   // Preparar dados para o gráfico de pizza
@@ -108,7 +140,7 @@ export function Etapa7PlanoDetalhado({ plano, onBack }: Props) {
         </div>
 
         <div className="grid grid-cols-1 gap-2">
-          {chartData.map((item: any, index: number) => (
+          {chartData.map((item: ChartItem, index: number) => (
             <div key={item.name} className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/50 border border-border/10">
               <div className="flex items-center gap-3">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
@@ -127,7 +159,9 @@ export function Etapa7PlanoDetalhado({ plano, onBack }: Props) {
             <TrendingUp size={24} className={analysis.trafficLight.viability.status === 'green' ? 'text-emerald-500' : 'text-amber-500'} />
           </div>
           <h4 className="text-xs font-bold text-zinc-400 uppercase mb-1">Probabilidade de Sucesso</h4>
-          <p className="text-3xl font-black text-white">{(simulation.prob_meta * 100).toFixed(0)}%</p>
+          <p className="text-3xl font-black text-white">
+            {simulation.prob_meta === null ? "Estratégia montada" : `${(simulation.prob_meta * 100).toFixed(0)}%`}
+          </p>
           <p className="text-[10px] text-zinc-500 mt-2 font-medium leading-relaxed">{analysis.trafficLight.viability.desc}</p>
         </div>
 
@@ -145,7 +179,7 @@ export function Etapa7PlanoDetalhado({ plano, onBack }: Props) {
       <div className="space-y-3">
         <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Análise de Robustez</h3>
         <div className="grid grid-cols-1 gap-2">
-          {Object.entries(analysis.trafficLight).map(([key, info]: [string, any]) => {
+          {Object.entries(analysis.trafficLight).map(([key, info]) => {
              if (key === 'viability' || key === 'portfolio_risk') return null;
              return (
                <div key={key} className={`flex items-center justify-between p-4 rounded-2xl border ${STATUS_BGS[info.status]}`}>

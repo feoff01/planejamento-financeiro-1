@@ -3,17 +3,17 @@ import { z } from "zod";
 // ── Etapa 1: Renda & Gastos ──────────────────────────────────────────────────
 export const Etapa1Schema = z.object({
   idade: z
-    .number({ invalid_type_error: "Informe sua idade." })
+    .number({ message: "Informe sua idade." })
     .min(18, "Idade mínima 18 anos.")
     .max(100, "Idade máxima 100 anos."),
   renda_mensal: z
-    .number({ invalid_type_error: "Informe sua renda mensal." })
+    .number({ message: "Informe sua renda mensal." })
     .positive("A renda deve ser maior que zero."),
   gastos_mensais: z
-    .number({ invalid_type_error: "Informe seus gastos mensais." })
+    .number({ message: "Informe seus gastos mensais." })
     .positive("Os gastos devem ser maior que zero."),
   aporte_mensal: z
-    .number({ invalid_type_error: "Informe seu aporte mensal." })
+    .number({ message: "Informe seu aporte mensal." })
     .min(0),
 });
 
@@ -21,11 +21,11 @@ export const Etapa1Schema = z.object({
 export const Etapa2Schema = z
   .object({
     patrimonio_total: z
-      .number({ invalid_type_error: "Informe seu patrimônio atual." })
+      .number({ message: "Informe seu patrimônio atual." })
       .min(0, "O patrimônio não pode ser negativo."),
-    tipos_ativos: z.array(z.string()).optional().default([]),
+    tipos_ativos: z.array(z.string()),
     valor_reserva: z
-      .number({ invalid_type_error: "Informe o valor total da sua reserva." })
+      .number({ message: "Informe o valor total da sua reserva." })
       .min(0),
     meses_reserva: z.number().min(0),
   })
@@ -52,7 +52,7 @@ export const Etapa4Schema = z.object({
   detalhes_objetivos: z.record(
     z.string(),
     z.object({
-      valor: z.number({ invalid_type_error: "Informe um valor." }).min(0, "Valor não pode ser negativo"),
+      valor: z.number({ message: "Informe um valor." }).min(0, "Valor não pode ser negativo"),
       horizonte_anos: z.number().min(1, "Mínimo 1 ano.").max(50, "Máximo 50 anos."),
       natureza: z.enum(["need", "want"]),
       liquidez: z.enum(["low", "medium", "high"]),

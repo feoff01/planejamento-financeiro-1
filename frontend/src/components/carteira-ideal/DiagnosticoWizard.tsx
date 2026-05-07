@@ -8,7 +8,7 @@ import { Etapa2Form } from "./wizard/Etapa2Form";
 import { Etapa3Form } from "./wizard/Etapa3Form";
 import { Etapa4DetalhesObjetivos } from "./wizard/Etapa4DetalhesObjetivos";
 import { Etapa5Form } from "./wizard/Etapa5Form";
-import { Etapa6Resultado } from "./wizard/Etapa6Resultado";
+import { OutputGenerico } from "./wizard/OutputGenerico";
 import { EtapaLoadingScreen } from "./wizard/EtapaLoadingScreen";
 import { ErrorModal } from "../common/ErrorModal";
 
@@ -135,7 +135,7 @@ export function DiagnosticoWizard({ onResultadoVisibleChange }: Props) {
             {etapaAtual === 3 && <Etapa3Form onNext={avancarEtapa} onBack={voltarEtapa} />}
             {etapaAtual === 4 && <Etapa4DetalhesObjetivos onNext={avancarEtapa} onBack={voltarEtapa} objetivos={dados.objetivos_selecionados ?? []} />}
             {etapaAtual === 5 && <Etapa5Form onNext={submeter} onBack={voltarEtapa} isLoading={isLoading} />}
-            {etapaAtual === 6 && resultado && <Etapa6Resultado resultado={resultado} dadosCompletos={dados} />}
+            {etapaAtual === 6 && resultado && <OutputGenerico resultado={resultado} dadosCompletos={dados} />}
           </motion.div>
         )}
       </AnimatePresence>

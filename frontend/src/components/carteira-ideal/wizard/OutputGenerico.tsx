@@ -17,7 +17,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
-import { Etapa7PlanoDetalhado } from "./Etapa7PlanoDetalhado";
+import { OutputEspecifico } from "./OutputEspecifico";
+import type { PlanoEspecifico } from "./OutputEspecifico";
 
 type Perfil = "conservador" | "moderado" | "arrojado";
 
@@ -26,6 +27,7 @@ type Resultado = {
   pontos: number;
   alocacao: { renda_fixa: number; acoes: number; liquidez: number };
   alertas: string[];
+  output_generico?: OutputGenericoNarrativa;
   motor: {
     portfolio: Record<string, number>;
     rules_applied: unknown;
@@ -42,9 +44,31 @@ type Resultado = {
       aportado: number;
       median: number;
     };
-    analysis: unknown;
+    analysis: PlanoEspecifico["analysis"];
   };
 };
+
+type OutputGenericoNarrativa = {
+  status: "base_fragil" | "base_incompleta" | "meta_critica" | "meta_apertada" | "plano_viavel" | "plano_forte";
+  titulo: string;
+  subtitulo: string;
+  prioridade_atual: string;
+  passos: Array<{
+    titulo: string;
+    descricao: string;
+    status: "agora" | "proximo" | "depois";
+  }>;
+  cta_label: string;
+  mostrar_probabilidade_no_topo: boolean;
+  metricas: {
+    probabilidade: number | null;
+    reserva_atual: number;
+    reserva_ideal: number;
+    gap_reserva: number;
+  };
+};
+
+type OutputGenericoPassoStatus = OutputGenericoNarrativa["passos"][number]["status"];
 
 type ObjetivoSelecionado = {
   id: string;
@@ -86,9 +110,10 @@ const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
 });
 
-export function Etapa6Resultado({ resultado, dadosCompletos }: Props) {
+export function OutputGenerico({ resultado, dadosCompletos }: Props) {
   const [showDetalhado, setShowDetalhado] = useState(false);
   const config = PERFIL_CONFIG[resultado.perfil];
+  const narrativa = resultado.output_generico;
   const probMeta = resultado.motor.simulation.prob_meta;
   const objetivos = buildObjetivosResumo(dadosCompletos);
   const motivos = buildMotivos(resultado, objetivos);
@@ -102,7 +127,7 @@ export function Etapa6Resultado({ resultado, dadosCompletos }: Props) {
   };
 
   if (showDetalhado) {
-    return <Etapa7PlanoDetalhado plano={planoCompleto} onBack={() => setShowDetalhado(false)} />;
+    return <OutputEspecifico plano={planoCompleto} onBack={() => setShowDetalhado(false)} />;
   }
 
   return (
@@ -117,10 +142,10 @@ export function Etapa6Resultado({ resultado, dadosCompletos }: Props) {
           Resultado do seu diagnóstico
         </p>
         <h2 className="text-3xl font-black leading-tight text-primary-500 sm:text-4xl">
-          Sua estratégia personalizada está pronta
+          {narrativa?.titulo ?? "Sua estratégia personalizada está pronta"}
         </h2>
         <p className="mx-auto max-w-xl text-sm leading-relaxed text-zinc-400">
-          Com base nos seus objetivos, prazo e perfil, montamos uma visão simples para guiar seu próximo passo.
+          {narrativa?.subtitulo ?? "Com base nos seus objetivos, prazo e perfil, montamos uma visão simples para guiar seu próximo passo."}
         </p>
       </header>
 
@@ -133,23 +158,39 @@ export function Etapa6Resultado({ resultado, dadosCompletos }: Props) {
           <h3 className={`mt-2 text-4xl font-black ${config.color}`}>{config.label}</h3>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">{config.desc}</p>
 
-          <div className="mx-auto mt-6 flex max-w-2xl flex-col items-center justify-center gap-3 rounded-2xl border border-border/50 bg-zinc-950/35 px-4 py-4 sm:flex-row sm:px-5">
-            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${getProbabilityIconTone(probMeta)}`}>
-              <Target size={22} />
+          {(!narrativa || narrativa.mostrar_probabilidade_no_topo) ? (
+            <div className="mx-auto mt-6 flex max-w-2xl flex-col items-center justify-center gap-3 rounded-2xl border border-border/50 bg-zinc-950/35 px-4 py-4 sm:flex-row sm:px-5">
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${getProbabilityIconTone(probMeta)}`}>
+                <Target size={22} />
+              </div>
+              <div className="text-center sm:text-left">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-500">Probabilidade simulada</p>
+                <p className="text-xs leading-relaxed text-zinc-400">
+                  {probMeta === null
+                    ? "A estratégia foi montada mesmo sem uma meta numérica para simular."
+                    : "Chance estimada de atingir sua meta dentro do prazo informado."}
+                </p>
+              </div>
+              <p className={`text-3xl font-black sm:ml-auto ${getProbabilityTextTone(probMeta)}`}>{formatProbability(probMeta)}</p>
             </div>
-            <div className="text-center sm:text-left">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-500">Probabilidade simulada</p>
-              <p className="text-xs leading-relaxed text-zinc-400">
-                {probMeta === null
-                  ? "A estratégia foi montada mesmo sem uma meta numérica para simular."
-                  : "Chance estimada de atingir sua meta dentro do prazo informado."}
-              </p>
+          ) : (
+            <div className="mx-auto mt-6 flex max-w-2xl flex-col items-center justify-center gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-4 sm:flex-row sm:px-5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-400">
+                <Target size={22} />
+              </div>
+              <div className="text-center sm:text-left">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-400/80">Prioridade atual</p>
+                <p className="text-sm font-black text-zinc-100">{narrativa.prioridade_atual}</p>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+                  A probabilidade técnica continua no plano detalhado, mas agora o foco é seguir a fase certa.
+                </p>
+              </div>
             </div>
-            <p className={`text-3xl font-black sm:ml-auto ${getProbabilityTextTone(probMeta)}`}>{formatProbability(probMeta)}</p>
-          </div>
+          )}
         </div>
 
         <div className="space-y-6 border-t border-border/50 p-5 sm:p-8">
+          {narrativa && !narrativa.mostrar_probabilidade_no_topo && <PlanoFasesSection narrativa={narrativa} />}
           <ObjetivosSection objetivos={objetivos} />
           <AlocacaoSection alocacao={resultado.alocacao} />
           <MotivosSection motivos={motivos} />
@@ -159,7 +200,9 @@ export function Etapa6Resultado({ resultado, dadosCompletos }: Props) {
               <CheckCircle2 size={22} />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-primary-300">Estratégia compatível com seu objetivo</p>
+              <p className="text-sm font-bold text-primary-300">
+                {narrativa ? `Próxima ação: ${narrativa.prioridade_atual}` : "Estratégia compatível com seu objetivo"}
+              </p>
               <p className="mt-1 text-xs leading-relaxed text-zinc-400">
                 Ela já está pronta para ser acompanhada no dashboard e pode ser aberta em detalhes no próximo passo.
               </p>
@@ -173,12 +216,45 @@ export function Etapa6Resultado({ resultado, dadosCompletos }: Props) {
             className="flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-primary-500 to-orange-500 px-5 py-4 text-sm font-black text-black shadow-[0_18px_50px_rgba(245,158,11,0.24)] transition-all hover:from-primary-400 hover:to-orange-400"
           >
             <TrendingUp size={18} />
-            <span>Ver plano detalhado</span>
+            <span>{narrativa?.cta_label ?? "Ver plano detalhado"}</span>
             <ArrowRight size={18} />
           </motion.button>
         </div>
       </section>
     </motion.div>
+  );
+}
+
+function PlanoFasesSection({ narrativa }: { narrativa: OutputGenericoNarrativa }) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Target size={18} className="text-amber-400" />
+        <h3 className="text-sm font-bold text-white">Sua rota em fases</h3>
+      </div>
+
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+        {narrativa.passos.map((passo, index) => (
+          <article key={`${passo.titulo}-${index}`} className="rounded-2xl border border-border/45 bg-zinc-950/45 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${getPassoTone(passo.status)}`}>
+                {formatPassoStatus(passo.status)}
+              </span>
+              <span className="text-xs font-black text-zinc-600">{index + 1}</span>
+            </div>
+            <p className="mt-4 text-sm font-black leading-tight text-zinc-100">{passo.titulo}</p>
+            <p className="mt-2 text-xs leading-relaxed text-zinc-500">{passo.descricao}</p>
+          </article>
+        ))}
+      </div>
+
+      {narrativa.metricas.gap_reserva > 0 && (
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs leading-relaxed text-zinc-400">
+          Para completar a reserva recomendada, faltam aproximadamente{" "}
+          <strong className="text-amber-300">{formatCurrency(narrativa.metricas.gap_reserva)}</strong>.
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -414,6 +490,18 @@ function formatLiquidez(value?: DetalheObjetivo["liquidez"]) {
 function formatProbability(value: number | null) {
   if (value === null) return "Estratégia montada";
   return `${Math.round(value * 100)}%`;
+}
+
+function getPassoTone(status: OutputGenericoPassoStatus) {
+  if (status === "agora") return "bg-amber-500/15 text-amber-300";
+  if (status === "proximo") return "bg-primary-500/15 text-primary-300";
+  return "bg-zinc-800 text-zinc-400";
+}
+
+function formatPassoStatus(status: OutputGenericoPassoStatus) {
+  if (status === "agora") return "Agora";
+  if (status === "proximo") return "Próximo";
+  return "Depois";
 }
 
 function getProbabilityIconTone(value: number | null) {
