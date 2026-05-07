@@ -304,7 +304,7 @@ const features = [
   },
   {
     icon: TrendingUp,
-    title: "Otimizador de Markowitz",
+    title: "Otimizador de Carteira",
     desc: "A matemática de prêmio Nobel aplicada à sua carteira para maximizar o retorno e minimizar o risco.",
     Mockup: CarteiraMockup,
     accent: true,

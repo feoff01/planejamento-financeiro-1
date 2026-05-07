@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { useEffect } from "react";
 import { useDiagnostico } from "@/hooks/useDiagnostico";
 import { Etapa1Form } from "./wizard/Etapa1Form";
 import { Etapa2Form } from "./wizard/Etapa2Form";
@@ -20,7 +21,11 @@ const ETAPAS = [
   { num: 6, label: "Resultado" },
 ];
 
-export function DiagnosticoWizard() {
+type Props = {
+  onResultadoVisibleChange?: (isVisible: boolean) => void;
+};
+
+export function DiagnosticoWizard({ onResultadoVisibleChange }: Props) {
   const {
     etapaAtual,
     isLoading,
@@ -34,9 +39,14 @@ export function DiagnosticoWizard() {
   } = useDiagnostico();
 
   const progressoPercent = ((etapaAtual - 1) / 5) * 100;
+  const isResultadoVisible = etapaAtual === 6 && !!resultado && !isLoading;
+
+  useEffect(() => {
+    onResultadoVisibleChange?.(isResultadoVisible);
+  }, [isResultadoVisible, onResultadoVisibleChange]);
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className={`w-full mx-auto ${isResultadoVisible ? "max-w-5xl" : "max-w-3xl"}`}>
       {/* Cabeçalho */}
       {etapaAtual < 6 && !isLoading && (
         <div className="mb-8">
@@ -123,7 +133,7 @@ export function DiagnosticoWizard() {
             {etapaAtual === 1 && <Etapa1Form onNext={avancarEtapa} />}
             {etapaAtual === 2 && <Etapa2Form onNext={avancarEtapa} onBack={voltarEtapa} gastosMensais={dados.gastos_mensais || 0} />}
             {etapaAtual === 3 && <Etapa3Form onNext={avancarEtapa} onBack={voltarEtapa} />}
-            {etapaAtual === 4 && <Etapa4DetalhesObjetivos onNext={avancarEtapa} onBack={voltarEtapa} objetivos={dados.objetivos_selecionados as any} />}
+            {etapaAtual === 4 && <Etapa4DetalhesObjetivos onNext={avancarEtapa} onBack={voltarEtapa} objetivos={dados.objetivos_selecionados ?? []} />}
             {etapaAtual === 5 && <Etapa5Form onNext={submeter} onBack={voltarEtapa} isLoading={isLoading} />}
             {etapaAtual === 6 && resultado && <Etapa6Resultado resultado={resultado} dadosCompletos={dados} />}
           </motion.div>

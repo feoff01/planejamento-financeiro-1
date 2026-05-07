@@ -1,4 +1,4 @@
-# Produto 04 — Otimizador de Carteira Markowitz
+# Produto 04 — Otimizador de Carteira
 
 ## O que é?
 Um **motor matemático de otimização de portfólio** implementado em TypeScript puro, fiel ao modelo de Harry Markowitz (1952 — vencedor do Nobel de Economia). Calcula a carteira ideal para maximizar retorno com o menor risco, usando simulação Monte Carlo para gerar a **Fronteira Eficiente**.

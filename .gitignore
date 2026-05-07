@@ -5,3 +5,8 @@ dist/
 build/
 .DS_Store
 __pycache__/
+*.log
+*.err
+.venv/
+venv/
+env/

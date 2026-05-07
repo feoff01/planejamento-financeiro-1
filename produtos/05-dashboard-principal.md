@@ -15,7 +15,7 @@ A **tela central** da plataforma Synapta, exibida imediatamente após o login. F
 | **Gráfico de evolução** | Curva do patrimônio nos últimos 12 meses |
 | **Alocação por setor** | Gráfico de pizza com a distribuição da carteira |
 | **Metas financeiras** | Exibe as 3 principais metas com barra de progresso |
-| **Ações rápidas** | Atalhos para Screening, Markowitz, Chat IA e Nova Transação |
+| **Ações rápidas** | Atalhos para Screening, Otimizador de Carteira, Chat IA e Nova Transação |
 
 ---
 

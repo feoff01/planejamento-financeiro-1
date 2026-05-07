@@ -8,7 +8,7 @@ import { Etapa1Schema, Etapa1Data } from "@/schemas/diagnosticoSchemas";
 
 type Props = { onNext: (data: Etapa1Data) => void };
 
-const formatToBRL = (value: any) => {
+const formatToBRL = (value: number | undefined | null | "") => {
   if (value === undefined || value === null || value === "" || isNaN(value)) return "";
   return new Intl.NumberFormat("pt-BR").format(value);
 };
@@ -18,7 +18,21 @@ const parseBRL = (value: string) => {
   return cleanValue === "" ? undefined : Number(cleanValue);
 };
 
-function CurrencyInput({ id, label, control, name, error }: { id: string; label: string; control: Control<any>; name: string; error?: any }) {
+type CurrencyFieldName = "renda_mensal" | "gastos_mensais" | "aporte_mensal";
+
+function CurrencyInput({
+  id,
+  label,
+  control,
+  name,
+  error,
+}: {
+  id: string;
+  label: string;
+  control: Control<Etapa1Data>;
+  name: CurrencyFieldName;
+  error?: { message?: string };
+}) {
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-zinc-300 mb-1.5">{label}</label>
@@ -74,28 +88,28 @@ export function Etapa1Form({ onNext }: Props) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Campo Idade */}
-      <div className="max-w-[120px]">
-        <label htmlFor="idade" className="block text-sm font-medium text-zinc-300 mb-1.5">Sua idade</label>
-        <Controller
-          name="idade"
-          control={control}
-          render={({ field: { onChange, value, ref } }) => (
-            <input
-              id="idade"
-              ref={ref}
-              type="number"
-              value={value || ""}
-              onChange={(e) => onChange(e.target.value === "" ? undefined : Number(e.target.value))}
-              className="w-full px-4 py-3 rounded-xl bg-surface-light border border-border text-white placeholder-zinc-600 text-sm focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all"
-              placeholder="0"
-            />
-          )}
-        />
-        {errors.idade && <p className="mt-1.5 text-xs text-red-400">{errors.idade.message}</p>}
-      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-[0.7fr_1.65fr_1.65fr]">
+        <div>
+          <label htmlFor="idade" className="block text-sm font-medium text-zinc-300 mb-1.5">Sua idade</label>
+          <Controller
+            name="idade"
+            control={control}
+            render={({ field: { onChange, value, ref } }) => (
+              <input
+                id="idade"
+                ref={ref}
+                type="number"
+                inputMode="numeric"
+                value={value || ""}
+                onChange={(e) => onChange(e.target.value === "" ? undefined : Number(e.target.value))}
+                className="w-full px-4 py-3 rounded-xl bg-surface-light border border-border text-white placeholder-zinc-600 text-sm focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all"
+                placeholder="0"
+              />
+            )}
+          />
+          {errors.idade && <p className="mt-1.5 text-xs text-red-400">{errors.idade.message}</p>}
+        </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <CurrencyInput
           id="renda_mensal"
           label="Renda mensal líquida"
