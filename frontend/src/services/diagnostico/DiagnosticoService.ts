@@ -43,6 +43,45 @@ export const DiagnosticoService = {
         liquidez: number;
       };
       alertas: string[];
+      output_generico?: {
+        status: "base_fragil" | "base_incompleta" | "meta_critica" | "meta_apertada" | "plano_viavel" | "plano_forte";
+        fase_estrategica: "construir_reserva" | "completar_reserva" | "investir_para_objetivos";
+        tipo_plano: "reserva_emergencia" | "objetivos";
+        bloquear_carteira_objetivos: boolean;
+        titulo: string;
+        subtitulo: string;
+        prioridade_atual: string;
+        passos: Array<{
+          titulo: string;
+          descricao: string;
+          status: "agora" | "proximo" | "depois";
+        }>;
+        cta_label: string;
+        mostrar_probabilidade_no_topo: boolean;
+        metricas: {
+          probabilidade: number | null;
+          reserva_atual: number;
+          reserva_ideal: number;
+          gap_reserva: number;
+          aporte_recomendado_reserva: number;
+          meses_para_completar: number | null;
+          percentual_aporte_reserva: number;
+          plano_ativos: Array<{
+            asset_id: string;
+            nome: string;
+            categoria: "selic";
+            percentual: number;
+            valor_destino: number;
+            aporte_mensal: number;
+            retorno_liquido_aa: number;
+            retorno_bruto_aa: number;
+            volatilidade_aa: number;
+            prazo_anos: number;
+            liquidez: "diaria";
+            explicacao: string;
+          }>;
+        };
+      };
       motor: {
         portfolio: Record<string, number>;
         rules_applied: any;

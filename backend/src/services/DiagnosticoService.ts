@@ -117,10 +117,12 @@ export class DiagnosticoService {
     const sim = Engine.runMonteCarlo(portfolio.alloc, client.savings, client.monthly, mainGoal.years, mainGoal.target, view, catalog);
     const trafficLight = Engine.planTrafficLight(client, mainGoal, portfolio, sim, view, catalog, risk);
     const planScore = Engine.planScore(client, mainGoal, portfolio, sim, view, catalog, risk);
+    const emergencyFund = Engine.getEmergencyFund(client);
     const outputGenerico = this.outputGenericoNarrative.build({
       dados,
       probabilidade: sim.prob_meta,
       alertas,
+      reservaAsset: catalog[emergencyFund.target_asset_id],
     });
 
     // ═══════════════════════════════════════════════════════════════════════════

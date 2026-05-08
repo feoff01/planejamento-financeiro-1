@@ -50,6 +50,9 @@ type Resultado = {
 
 type OutputGenericoNarrativa = {
   status: "base_fragil" | "base_incompleta" | "meta_critica" | "meta_apertada" | "plano_viavel" | "plano_forte";
+  fase_estrategica: "construir_reserva" | "completar_reserva" | "investir_para_objetivos";
+  tipo_plano: "reserva_emergencia" | "objetivos";
+  bloquear_carteira_objetivos: boolean;
   titulo: string;
   subtitulo: string;
   prioridade_atual: string;
@@ -65,6 +68,23 @@ type OutputGenericoNarrativa = {
     reserva_atual: number;
     reserva_ideal: number;
     gap_reserva: number;
+    aporte_recomendado_reserva: number;
+    meses_para_completar: number | null;
+    percentual_aporte_reserva: number;
+    plano_ativos: Array<{
+      asset_id: string;
+      nome: string;
+      categoria: "selic";
+      percentual: number;
+      valor_destino: number;
+      aporte_mensal: number;
+      retorno_liquido_aa: number;
+      retorno_bruto_aa: number;
+      volatilidade_aa: number;
+      prazo_anos: number;
+      liquidez: "diaria";
+      explicacao: string;
+    }>;
   };
 };
 
@@ -114,11 +134,16 @@ export function OutputGenerico({ resultado, dadosCompletos }: Props) {
   const [showDetalhado, setShowDetalhado] = useState(false);
   const config = PERFIL_CONFIG[resultado.perfil];
   const narrativa = resultado.output_generico;
+  const isReservaPlan = narrativa?.tipo_plano === "reserva_emergencia";
   const probMeta = resultado.motor.simulation.prob_meta;
   const objetivos = buildObjetivosResumo(dadosCompletos);
   const motivos = buildMotivos(resultado, objetivos);
 
   const planoCompleto = {
+    tipo_plano: narrativa?.tipo_plano ?? "objetivos",
+    reserva: narrativa?.metricas,
+    cta_label: narrativa?.cta_label,
+    objetivos_registrados: objetivos,
     portfolio: resultado.motor.portfolio,
     rules_applied: resultado.motor.rules_applied,
     risk: resultado.motor.risk,
@@ -128,6 +153,16 @@ export function OutputGenerico({ resultado, dadosCompletos }: Props) {
 
   if (showDetalhado) {
     return <OutputEspecifico plano={planoCompleto} onBack={() => setShowDetalhado(false)} />;
+  }
+
+  if (isReservaPlan && narrativa) {
+    return (
+      <ReservaGenerico
+        narrativa={narrativa}
+        objetivos={objetivos}
+        onOpenDetalhado={() => setShowDetalhado(true)}
+      />
+    );
   }
 
   return (
@@ -225,7 +260,214 @@ export function OutputGenerico({ resultado, dadosCompletos }: Props) {
   );
 }
 
-function PlanoFasesSection({ narrativa }: { narrativa: OutputGenericoNarrativa }) {
+function ReservaGenerico({
+  narrativa,
+  objetivos,
+  onOpenDetalhado,
+}: {
+  narrativa: OutputGenericoNarrativa;
+  objetivos: ObjetivoResumo[];
+  onOpenDetalhado: () => void;
+}) {
+  const metricas = narrativa.metricas;
+  const reservaProgress = getReservaProgress(metricas.reserva_atual, metricas.reserva_ideal);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="mx-auto w-full max-w-5xl pb-8"
+    >
+      {false && (
+      <header className="space-y-2 text-center">
+        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-primary-500/80">
+          Resultado do seu diagnóstico
+        </p>
+        <h2 className="text-3xl font-black leading-tight text-primary-500 sm:text-4xl">
+          {narrativa.titulo}
+        </h2>
+        <p className="mx-auto max-w-2xl text-sm leading-relaxed text-zinc-400">
+          {narrativa.subtitulo}
+        </p>
+      </header>
+      )}
+
+      <section className="space-y-6">
+        <div className="rounded-3xl border border-amber-500/15 bg-gradient-to-b from-amber-500/10 via-zinc-950/35 to-zinc-950/20 px-5 py-7 text-center sm:px-8 sm:py-9">
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border border-amber-500/35 bg-amber-500/10 shadow-[0_0_42px_rgba(245,158,11,0.18)]">
+            <ShieldCheck size={44} className="text-amber-400" />
+          </div>
+          <p className="mt-5 text-[11px] font-bold uppercase tracking-[0.28em] text-zinc-500">Fase estratégica</p>
+          <h3 className="mt-2 text-3xl font-black text-amber-300 sm:text-4xl">{narrativa.prioridade_atual}</h3>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">
+            A carteira de objetivos fica em espera por enquanto. Seus sonhos foram registrados, mas a base precisa estar pronta antes de qualquer alocação para crescimento.
+          </p>
+
+          <div className="mx-auto mt-6 flex max-w-2xl flex-col items-center justify-center gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-4 sm:flex-row sm:px-5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-400">
+              <Target size={22} />
+            </div>
+            <div className="text-center sm:text-left">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-400/80">Prioridade atual</p>
+              <p className="text-sm font-black text-zinc-100">
+                Faltam {formatCurrency(metricas.gap_reserva)} para completar sua reserva.
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+                O plano completo mostra exatamente onde investir essa reserva com liquidez e baixo risco.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <section className="space-y-4">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+              <ReservaMetricCard
+                icon={CircleDollarSign}
+                label="Reserva atual"
+                value={formatCurrency(metricas.reserva_atual)}
+                tone="blue"
+              />
+              <ReservaMetricCard
+                icon={ShieldCheck}
+                label="Reserva ideal"
+                value={formatCurrency(metricas.reserva_ideal)}
+                tone="green"
+              />
+              <ReservaMetricCard
+                icon={TrendingUp}
+                label="Aporte para reserva"
+                value={formatCurrency(metricas.aporte_recomendado_reserva)}
+                tone="amber"
+              />
+            </div>
+
+            <div className="rounded-2xl border border-border/45 bg-zinc-950/45 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Progresso da reserva</p>
+                <p className="text-xs font-black text-emerald-300">{reservaProgress}%</p>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-800">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${reservaProgress}%` }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  className="h-full rounded-full bg-gradient-to-r from-blue-500 via-emerald-500 to-amber-400"
+                />
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+                Você já tem {formatCurrency(metricas.reserva_atual)} de {formatCurrency(metricas.reserva_ideal)} recomendados para sua base.
+              </p>
+            </div>
+          </section>
+
+          <PlanoFasesSection narrativa={narrativa} showGapAlert={false} />
+
+          <section className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Droplets size={18} className="text-amber-400" />
+              <h3 className="text-sm font-bold text-white">Estratégia por cima</h3>
+            </div>
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+              <ReservaStrategyItem title={`${metricas.percentual_aporte_reserva}% dos aportes`} desc="Enquanto a reserva não estiver pronta, nenhum aporte vai para objetivos." />
+              <ReservaStrategyItem title="Liquidez diária" desc="A reserva precisa estar acessível para imprevistos, sem depender do timing do mercado." />
+              <ReservaStrategyItem title="Baixo risco" desc="O foco dessa fase é preservar a base, não buscar retorno máximo." />
+            </div>
+          </section>
+
+          <ObjetivosSection objetivos={objetivos} bloqueados />
+
+          <div className="flex items-start gap-3 rounded-2xl border border-primary-500/25 bg-primary-500/10 p-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-500/15 text-primary-500">
+              <CheckCircle2 size={22} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-primary-300">Objetivos salvos para a próxima fase</p>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+                Quando sua reserva chegar a 6 meses de gastos, recalculamos a carteira usando os objetivos que você já informou.
+              </p>
+            </div>
+          </div>
+
+          <motion.button
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onOpenDetalhado}
+            className="flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-primary-500 to-orange-500 px-5 py-4 text-sm font-black text-black shadow-[0_18px_50px_rgba(245,158,11,0.24)] transition-all hover:from-primary-400 hover:to-orange-400"
+          >
+            <ShieldCheck size={18} />
+            <span>{narrativa.cta_label}</span>
+            <ArrowRight size={18} />
+          </motion.button>
+        </div>
+      </section>
+    </motion.div>
+  );
+}
+
+type ReservaMetricTone = "blue" | "green" | "amber";
+
+const RESERVA_METRIC_TONES: Record<ReservaMetricTone, { card: string; icon: string; value: string }> = {
+  blue: {
+    card: "border-blue-500/20 bg-blue-500/10",
+    icon: "bg-blue-500/10 text-blue-300",
+    value: "text-blue-100",
+  },
+  green: {
+    card: "border-emerald-500/20 bg-emerald-500/10",
+    icon: "bg-emerald-500/10 text-emerald-300",
+    value: "text-emerald-100",
+  },
+  amber: {
+    card: "border-amber-500/20 bg-amber-500/10",
+    icon: "bg-amber-500/10 text-amber-300",
+    value: "text-amber-100",
+  },
+};
+
+function ReservaMetricCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  tone: ReservaMetricTone;
+}) {
+  const colors = RESERVA_METRIC_TONES[tone];
+
+  return (
+    <div className={`rounded-2xl border p-4 ${colors.card}`}>
+      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+        <span className={`flex h-6 w-6 items-center justify-center rounded-full ${colors.icon}`}>
+          <Icon size={13} />
+        </span>
+        <span className="text-zinc-400">{label}</span>
+      </div>
+      <p className={`mt-2 text-lg font-black leading-tight ${colors.value}`}>{value}</p>
+    </div>
+  );
+}
+
+function ReservaStrategyItem({ title, desc }: { title: string; desc: string }) {
+  return (
+    <article className="rounded-2xl border border-border/45 bg-zinc-950/45 p-4">
+      <p className="text-sm font-black leading-tight text-zinc-100">{title}</p>
+      <p className="mt-2 text-xs leading-relaxed text-zinc-500">{desc}</p>
+    </article>
+  );
+}
+
+function PlanoFasesSection({
+  narrativa,
+  showGapAlert = true,
+}: {
+  narrativa: OutputGenericoNarrativa;
+  showGapAlert?: boolean;
+}) {
   return (
     <section className="space-y-3">
       <div className="flex items-center gap-2">
@@ -248,7 +490,7 @@ function PlanoFasesSection({ narrativa }: { narrativa: OutputGenericoNarrativa }
         ))}
       </div>
 
-      {narrativa.metricas.gap_reserva > 0 && (
+      {showGapAlert && narrativa.metricas.gap_reserva > 0 && (
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs leading-relaxed text-zinc-400">
           Para completar a reserva recomendada, faltam aproximadamente{" "}
           <strong className="text-amber-300">{formatCurrency(narrativa.metricas.gap_reserva)}</strong>.
@@ -258,12 +500,14 @@ function PlanoFasesSection({ narrativa }: { narrativa: OutputGenericoNarrativa }
   );
 }
 
-function ObjetivosSection({ objetivos }: { objetivos: ObjetivoResumo[] }) {
+function ObjetivosSection({ objetivos, bloqueados = false }: { objetivos: ObjetivoResumo[]; bloqueados?: boolean }) {
   return (
     <section className="space-y-3">
       <div className="flex items-center gap-2">
         <Target size={18} className="text-primary-500" />
-        <h3 className="text-sm font-bold text-white">Seus objetivos considerados</h3>
+        <h3 className="text-sm font-bold text-white">
+          {bloqueados ? "Objetivos registrados para a próxima fase" : "Seus objetivos considerados"}
+        </h3>
       </div>
 
       {objetivos.length === 0 ? (
@@ -273,7 +517,7 @@ function ObjetivosSection({ objetivos }: { objetivos: ObjetivoResumo[] }) {
       ) : (
         <div className="space-y-3">
           {objetivos.map((objetivo) => (
-            <ObjetivoCard key={objetivo.id} objetivo={objetivo} />
+            <ObjetivoCard key={objetivo.id} objetivo={objetivo} bloqueado={bloqueados} />
           ))}
         </div>
       )}
@@ -281,7 +525,7 @@ function ObjetivosSection({ objetivos }: { objetivos: ObjetivoResumo[] }) {
   );
 }
 
-function ObjetivoCard({ objetivo }: { objetivo: ObjetivoResumo }) {
+function ObjetivoCard({ objetivo, bloqueado = false }: { objetivo: ObjetivoResumo; bloqueado?: boolean }) {
   const detalhes = objetivo.detalhes;
 
   return (
@@ -292,7 +536,7 @@ function ObjetivoCard({ objetivo }: { objetivo: ObjetivoResumo }) {
           {!detalhes && <p className="mt-1 text-xs text-zinc-500">Detalhes não informados.</p>}
         </div>
         <span className="w-fit rounded-full border border-primary-500/20 bg-primary-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-primary-400">
-          Prioridade {detalhes?.prioridade ?? "-"}
+          {bloqueado ? "Após reserva" : `Prioridade ${detalhes?.prioridade ?? "-"}`}
         </span>
       </div>
 
@@ -303,6 +547,12 @@ function ObjetivoCard({ objetivo }: { objetivo: ObjetivoResumo }) {
           <InfoPill icon={ShieldCheck} label="Tipo" value={formatNatureza(detalhes.natureza)} />
           <InfoPill icon={Droplets} label="Liquidez" value={formatLiquidez(detalhes.liquidez)} />
         </div>
+      )}
+
+      {bloqueado && (
+        <p className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-zinc-400">
+          Este objetivo fica salvo. A carteira dele será calculada quando sua reserva estiver completa.
+        </p>
       )}
     </article>
   );
@@ -467,6 +717,11 @@ function getPrincipalClasse(alocacao: Resultado["alocacao"]) {
 
 function formatCurrency(value?: number) {
   return currencyFormatter.format(value ?? 0);
+}
+
+function getReservaProgress(atual: number, ideal: number) {
+  if (ideal <= 0) return 0;
+  return Math.min(Math.round((Math.max(atual, 0) / ideal) * 100), 100);
 }
 
 function formatPrazo(value?: number) {

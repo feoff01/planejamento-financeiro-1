@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useForm, Controller, Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
@@ -61,6 +62,8 @@ function CurrencyInput({
 }
 
 export function Etapa1Form({ onNext }: Props) {
+  const hasUserAdjustedAporte = useRef(false);
+
   const { handleSubmit, watch, control, setValue, formState: { errors } } = useForm<Etapa1Data>({
     resolver: zodResolver(Etapa1Schema),
     defaultValues: {
@@ -77,9 +80,16 @@ export function Etapa1Form({ onNext }: Props) {
   const sobra = renda - gastos;
   
   // Porcentagem calculada para o slider
-  const porcentagemInvestimento = sobra > 0 ? Math.round((aporte / sobra) * 100) : 0;
+  const porcentagemInvestimento = sobra > 0 ? Math.min(Math.round((aporte / sobra) * 100), 100) : 0;
+
+  useEffect(() => {
+    if (sobra <= 0 || hasUserAdjustedAporte.current || aporte === sobra) return;
+
+    setValue("aporte_mensal", sobra, { shouldValidate: true });
+  }, [aporte, setValue, sobra]);
 
   const handleSliderChange = (pct: number) => {
+    hasUserAdjustedAporte.current = true;
     const valor = Math.round(sobra * (pct / 100));
     setValue("aporte_mensal", valor);
   };

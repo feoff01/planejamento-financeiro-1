@@ -1,4 +1,5 @@
 import { DiagnosticoInput } from "../domain/diagnosticoSchemas";
+import { Asset } from "../domain/carteiraIdealSchemas";
 
 export type OutputGenericoStatus =
   | "base_fragil"
@@ -8,14 +9,41 @@ export type OutputGenericoStatus =
   | "plano_viavel"
   | "plano_forte";
 
+export type OutputGenericoFaseEstrategica =
+  | "construir_reserva"
+  | "completar_reserva"
+  | "investir_para_objetivos";
+
+export type OutputGenericoTipoPlano =
+  | "reserva_emergencia"
+  | "objetivos";
+
 export type OutputGenericoPasso = {
   titulo: string;
   descricao: string;
   status: "agora" | "proximo" | "depois";
 };
 
+export type OutputGenericoReservaPlanoAtivo = {
+  asset_id: string;
+  nome: string;
+  categoria: "selic";
+  percentual: number;
+  valor_destino: number;
+  aporte_mensal: number;
+  retorno_liquido_aa: number;
+  retorno_bruto_aa: number;
+  volatilidade_aa: number;
+  prazo_anos: number;
+  liquidez: "diaria";
+  explicacao: string;
+};
+
 export type OutputGenericoNarrative = {
   status: OutputGenericoStatus;
+  fase_estrategica: OutputGenericoFaseEstrategica;
+  tipo_plano: OutputGenericoTipoPlano;
+  bloquear_carteira_objetivos: boolean;
   titulo: string;
   subtitulo: string;
   prioridade_atual: string;
@@ -27,6 +55,10 @@ export type OutputGenericoNarrative = {
     reserva_atual: number;
     reserva_ideal: number;
     gap_reserva: number;
+    aporte_recomendado_reserva: number;
+    meses_para_completar: number | null;
+    percentual_aporte_reserva: number;
+    plano_ativos: OutputGenericoReservaPlanoAtivo[];
   };
 };
 
@@ -34,18 +66,32 @@ type BuildInput = {
   dados: DiagnosticoInput;
   probabilidade: number | null;
   alertas: string[];
+  reservaAsset?: Asset;
 };
 
 export class OutputGenericoNarrativeService {
-  build({ dados, probabilidade, alertas }: BuildInput): OutputGenericoNarrative {
+  build({ dados, probabilidade, alertas, reservaAsset }: BuildInput): OutputGenericoNarrative {
     const reservaIdeal = dados.gastos_mensais * 6;
     const reservaAtual = dados.valor_reserva;
     const gapReserva = Math.max(reservaIdeal - reservaAtual, 0);
     const status = this.classificar(dados.meses_reserva, probabilidade);
-    const mostrarProbabilidadeNoTopo = status === "plano_viavel" || status === "plano_forte";
+    const faseEstrategica = this.faseEstrategicaPara(dados.meses_reserva);
+    const tipoPlano: OutputGenericoTipoPlano =
+      faseEstrategica === "investir_para_objetivos" ? "objetivos" : "reserva_emergencia";
+    const bloquearCarteiraObjetivos = tipoPlano === "reserva_emergencia";
+    const aporteRecomendadoReserva = bloquearCarteiraObjetivos ? dados.aporte_mensal : 0;
+    const mesesParaCompletar = this.calcularMesesParaCompletar(gapReserva, aporteRecomendadoReserva);
+    const planoAtivos = bloquearCarteiraObjetivos
+      ? this.buildPlanoAtivosReserva(reservaAsset, gapReserva, aporteRecomendadoReserva)
+      : [];
+    const mostrarProbabilidadeNoTopo =
+      tipoPlano === "objetivos" && (status === "plano_viavel" || status === "plano_forte");
 
     return {
       status,
+      fase_estrategica: faseEstrategica,
+      tipo_plano: tipoPlano,
+      bloquear_carteira_objetivos: bloquearCarteiraObjetivos,
       ...this.copyFor(status, alertas),
       mostrar_probabilidade_no_topo: mostrarProbabilidadeNoTopo,
       metricas: {
@@ -53,6 +99,10 @@ export class OutputGenericoNarrativeService {
         reserva_atual: reservaAtual,
         reserva_ideal: reservaIdeal,
         gap_reserva: gapReserva,
+        aporte_recomendado_reserva: aporteRecomendadoReserva,
+        meses_para_completar: mesesParaCompletar,
+        percentual_aporte_reserva: bloquearCarteiraObjetivos ? 100 : 0,
+        plano_ativos: planoAtivos,
       },
     };
   }
@@ -67,46 +117,100 @@ export class OutputGenericoNarrativeService {
     return "plano_forte";
   }
 
+  private faseEstrategicaPara(mesesReserva: number): OutputGenericoFaseEstrategica {
+    if (mesesReserva < 3) return "construir_reserva";
+    if (mesesReserva < 6) return "completar_reserva";
+    return "investir_para_objetivos";
+  }
+
+  private calcularMesesParaCompletar(gapReserva: number, aporteMensal: number): number | null {
+    if (gapReserva <= 0) return 0;
+    if (aporteMensal <= 0) return null;
+    return Math.ceil(gapReserva / aporteMensal);
+  }
+
+  private buildPlanoAtivosReserva(
+    asset: Asset | undefined,
+    gapReserva: number,
+    aporteMensal: number
+  ): OutputGenericoReservaPlanoAtivo[] {
+    if (!asset || asset.cat !== "selic") return [];
+
+    return [
+      {
+        asset_id: asset.id,
+        nome: asset.label,
+        categoria: "selic",
+        percentual: 100,
+        valor_destino: gapReserva,
+        aporte_mensal: aporteMensal,
+        retorno_liquido_aa: asset.ret_l,
+        retorno_bruto_aa: asset.ret_b,
+        volatilidade_aa: asset.vol,
+        prazo_anos: asset.anos,
+        liquidez: "diaria",
+        explicacao:
+          "Esse ativo faz sentido para reserva porque combina baixo risco, liquidez diária e pouca oscilação, reduzindo a chance de precisar vender investimentos de objetivos em um momento ruim.",
+      },
+    ];
+  }
+
   private copyFor(
     status: OutputGenericoStatus,
     alertas: string[]
-  ): Omit<OutputGenericoNarrative, "status" | "mostrar_probabilidade_no_topo" | "metricas"> {
+  ): Omit<
+    OutputGenericoNarrative,
+    | "status"
+    | "fase_estrategica"
+    | "tipo_plano"
+    | "bloquear_carteira_objetivos"
+    | "mostrar_probabilidade_no_topo"
+    | "metricas"
+  > {
     const alertaReserva = alertas[0];
 
     const copies: Record<
       OutputGenericoStatus,
-      Omit<OutputGenericoNarrative, "status" | "mostrar_probabilidade_no_topo" | "metricas">
+      Omit<
+        OutputGenericoNarrative,
+        | "status"
+        | "fase_estrategica"
+        | "tipo_plano"
+        | "bloquear_carteira_objetivos"
+        | "mostrar_probabilidade_no_topo"
+        | "metricas"
+      >
     > = {
       base_fragil: {
-        titulo: "Seu plano ideal começa pela construção da base",
+        titulo: "Sua prioridade agora é construir sua reserva",
         subtitulo:
           alertaReserva ||
-          "Antes de buscar mais retorno, sua prioridade é criar segurança para não precisar mexer nos investimentos no momento errado.",
-        prioridade_atual: "Reserva de emergência",
+          "Antes de buscar retorno para objetivos, sua prioridade é criar segurança para não precisar vender investimentos no momento errado.",
+        prioridade_atual: "Construir reserva de emergência",
         passos: [
           {
-            titulo: "Blindar sua rotina financeira",
-            descricao: "A primeira fase é formar uma reserva mínima para proteger seus gastos essenciais.",
+            titulo: "Proteger seus gastos essenciais",
+            descricao: "A primeira fase é formar uma reserva mínima para cobrir imprevistos sem comprometer seus objetivos.",
             status: "agora",
           },
           {
-            titulo: "Organizar aportes mensais",
-            descricao: "Depois da base, o plano define quanto direcionar por mês para evoluir com consistência.",
+            titulo: "Direcionar seus aportes para a base",
+            descricao: "Enquanto a reserva não estiver pronta, 100% do aporte recomendado fica focado em liquidez e baixo risco.",
             status: "proximo",
           },
           {
-            titulo: "Avançar para a carteira ideal",
-            descricao: "Com a reserva encaminhada, a estratégia pode buscar crescimento com mais tranquilidade.",
+            titulo: "Liberar a carteira de objetivos",
+            descricao: "Seus objetivos ficam registrados e entram na estratégia quando a reserva alcançar 6 meses de gastos.",
             status: "depois",
           },
         ],
-        cta_label: "Ver minha rota de investimento",
+        cta_label: "Desbloquear plano exato da minha reserva",
       },
       base_incompleta: {
-        titulo: "Sua estratégia já tem direção, mas ainda precisa reforçar a base",
+        titulo: "Sua reserva já começou, agora falta completar a base",
         subtitulo:
-          "Você já saiu do zero. Agora o plano precisa completar a reserva para liberar mais espaço para crescimento.",
-        prioridade_atual: "Completar reserva e preparar crescimento",
+          "Você já saiu do zero. Antes de investir para objetivos, o próximo passo é fechar a reserva recomendada.",
+        prioridade_atual: "Completar reserva de emergência",
         passos: [
           {
             titulo: "Completar a reserva recomendada",
@@ -114,17 +218,17 @@ export class OutputGenericoNarrativeService {
             status: "agora",
           },
           {
-            titulo: "Separar objetivo e segurança",
-            descricao: "O plano organiza o que fica em liquidez e o que pode trabalhar por mais tempo.",
+            titulo: "Manter os aportes na reserva",
+            descricao: "Até a base ficar pronta, a recomendação é não dividir aportes com objetivos de longo prazo.",
             status: "proximo",
           },
           {
-            titulo: "Aplicar a carteira por fase",
-            descricao: "Com a base pronta, a alocação fica mais alinhada ao objetivo informado.",
+            titulo: "Usar os objetivos salvos",
+            descricao: "Com a reserva completa, a Synapta recalcula a carteira usando os objetivos que você informou.",
             status: "depois",
           },
         ],
-        cta_label: "Ver plano detalhado",
+        cta_label: "Ver plano para completar minha reserva",
       },
       meta_critica: {
         titulo: "Seu objetivo pede uma rota mais inteligente",
