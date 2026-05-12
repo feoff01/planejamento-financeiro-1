@@ -43,7 +43,7 @@ export function MobileNav() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="md:hidden fixed right-4 top-4 z-50 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-zinc-950/85 text-zinc-100 shadow-2xl shadow-black/40 backdrop-blur-xl transition-all active:scale-95"
+        className="md:hidden fixed right-4 top-4 z-50 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-blue-brand-950/85 text-zinc-100 shadow-2xl shadow-black/40 backdrop-blur-xl transition-all active:scale-95"
         aria-label="Abrir menu"
       >
         <Menu size={22} />
@@ -59,7 +59,7 @@ export function MobileNav() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="md:hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
+              className="md:hidden fixed inset-0 z-50 bg-blue-brand-950/70 backdrop-blur-sm"
             />
 
             <motion.aside
@@ -71,8 +71,8 @@ export function MobileNav() {
             >
               <div className="flex items-center justify-between border-b border-white/5 px-4 py-2.5">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-orange-600">
-                    <span className="text-xs font-bold leading-none text-black">S</span>
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-gold-600">
+                    <span className="text-xs font-bold leading-none text-blue-brand-950">S</span>
                   </div>
                   <span className="text-xs font-bold tracking-tight">
                     Synapta<span className="text-primary-500">Invest</span>
@@ -138,9 +138,9 @@ export function MobileNav() {
                   <span>Voltar para o site</span>
                 </Link>
 
-                <div className="flex items-center justify-between rounded-xl bg-zinc-950/45 px-3 py-2">
+                <div className="flex items-center justify-between rounded-xl bg-blue-brand-950/45 px-3 py-2">
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-800">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-brand-800">
                       <User size={13} className="text-zinc-400" />
                     </div>
                     <span className="truncate text-xs font-medium text-zinc-300">{userName}</span>

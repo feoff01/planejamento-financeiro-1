@@ -41,7 +41,7 @@ export default function CadastroPage() {
 
       {/* Background glows */}
       <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-primary-600/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-amber-900/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-gold-900/10 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Logo */}
       <motion.div
@@ -51,8 +51,8 @@ export default function CadastroPage() {
         className="mb-8"
       >
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-orange-600 rounded-lg flex items-center justify-center">
-            <span className="text-black font-bold text-lg leading-none">S</span>
+          <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-gold-600 rounded-lg flex items-center justify-center">
+            <span className="text-blue-brand-950 font-bold text-lg leading-none">S</span>
           </div>
           <span className="font-bold text-xl tracking-tight">
             Synapta<span className="text-primary-500">Invest</span>
@@ -194,7 +194,7 @@ export default function CadastroPage() {
             disabled={isLoading}
             whileHover={{ scale: isLoading ? 1 : 1.02 }}
             whileTap={{ scale: isLoading ? 1 : 0.98 }}
-            className="w-full py-3.5 rounded-full font-semibold text-sm bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-orange-500 text-black flex items-center justify-center gap-2 glow-effect transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+            className="w-full py-3.5 rounded-full font-semibold text-sm bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-gold-500 text-blue-brand-950 flex items-center justify-center gap-2 glow-effect transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed mt-2"
           >
             {isLoading ? (
               <>

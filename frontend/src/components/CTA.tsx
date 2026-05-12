@@ -16,7 +16,7 @@ export function CTA() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <div className="mx-auto w-20 h-20 rounded-full bg-primary-500/10 flex items-center justify-center mb-8 border border-primary-500/20 shadow-[0_0_40px_rgba(245,158,11,0.2)]">
+          <div className="mx-auto w-20 h-20 rounded-full bg-primary-500/10 flex items-center justify-center mb-8 border border-primary-500/20 shadow-[0_0_40px_rgba(201, 162, 75,0.2)]">
             <Clock className="text-primary-500" size={32} />
           </div>
           
@@ -30,7 +30,7 @@ export function CTA() {
           
           <Link
             href="/auth/login"
-            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-orange-500 text-black font-semibold rounded-full flex items-center justify-center gap-2 glow-effect transition-all cursor-pointer mx-auto"
+            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-gold-500 text-blue-brand-950 font-semibold rounded-full flex items-center justify-center gap-2 glow-effect transition-all cursor-pointer mx-auto"
           >
             <motion.div
               className="flex items-center justify-center gap-2"

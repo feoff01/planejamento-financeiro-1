@@ -107,13 +107,13 @@ const currencyFormatter = new Intl.NumberFormat("pt-BR", {
 
 const STATUS_ICONS: Record<TrafficStatus, ReactNode> = {
   green: <CheckCircle2 size={14} className="text-emerald-500" />,
-  yellow: <AlertCircle size={14} className="text-amber-500" />,
+  yellow: <AlertCircle size={14} className="text-gold-500" />,
   red: <XCircle size={14} className="text-red-500" />,
 };
 
 const STATUS_BGS: Record<TrafficStatus, string> = {
   green: "bg-emerald-500/10 border-emerald-500/20",
-  yellow: "bg-amber-500/10 border-amber-500/20",
+  yellow: "bg-gold-500/10 border-gold-500/20",
   red: "bg-red-500/10 border-red-500/20",
 };
 
@@ -131,17 +131,17 @@ function ReservaEspecifica({ plano, onBack }: Props) {
       className="space-y-6 pb-10"
     >
       <div className="flex items-center justify-between gap-4 bg-surface-light/50 p-4 rounded-2xl border border-border/30">
-        <button onClick={onBack} className="p-2 rounded-xl hover:bg-zinc-800 transition-all text-zinc-400">
+        <button onClick={onBack} className="p-2 rounded-xl hover:bg-blue-brand-800 transition-all text-zinc-400">
           <ArrowLeft size={20} />
         </button>
         <div className="flex flex-col items-center flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <ShieldCheck size={16} className="text-amber-500" />
+            <ShieldCheck size={16} className="text-gold-500" />
             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Plano completo</span>
           </div>
           <p className="text-lg font-black text-white text-center">Reserva de emergência</p>
         </div>
-        <div className="px-4 py-2 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-400">
+        <div className="px-4 py-2 rounded-xl border border-gold-500/30 bg-gold-500/10 text-gold-400">
           <span className="text-xs font-black uppercase tracking-tighter">Premium</span>
         </div>
       </div>
@@ -158,12 +158,12 @@ function ReservaEspecifica({ plano, onBack }: Props) {
           <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Progresso da reserva</p>
           <p className="text-xs font-black text-emerald-300">{reservaProgress}%</p>
         </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-800">
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-blue-brand-800">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${reservaProgress}%` }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="h-full rounded-full bg-gradient-to-r from-blue-500 via-emerald-500 to-amber-400"
+            className="h-full rounded-full bg-gradient-to-r from-blue-500 via-emerald-500 to-gold-400"
           />
         </div>
         <p className="mt-2 text-xs leading-relaxed text-zinc-500">
@@ -172,16 +172,16 @@ function ReservaEspecifica({ plano, onBack }: Props) {
       </div>
 
       {ativo && (
-        <div className="rounded-3xl border border-amber-500/25 bg-amber-500/10 p-6 shadow-[0_18px_60px_rgba(245,158,11,0.08)]">
+        <div className="rounded-3xl border border-gold-500/25 bg-gold-500/10 p-6 shadow-[0_18px_60px_rgba(201, 162, 75,0.08)]">
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <Droplets size={18} className="text-amber-400" />
+                <Droplets size={18} className="text-gold-400" />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-white">Invista exatamente aqui</h3>
               </div>
-              <p className="mt-2 text-3xl font-black leading-tight text-amber-200">{ativo.nome}</p>
+              <p className="mt-2 text-3xl font-black leading-tight text-gold-200">{ativo.nome}</p>
             </div>
-            <span className="w-fit rounded-2xl border border-amber-500/30 bg-amber-500/15 px-4 py-2 text-xs font-black text-amber-200">
+            <span className="w-fit rounded-2xl border border-gold-500/30 bg-gold-500/15 px-4 py-2 text-xs font-black text-gold-200">
               {ativo.percentual}% dos aportes da reserva
             </span>
           </div>
@@ -237,7 +237,7 @@ function ReservaEspecifica({ plano, onBack }: Props) {
       <div className="pt-6">
         <button
           onClick={() => window.location.href = '/dashboard'}
-          className="w-full py-4 rounded-2xl bg-white text-black font-black text-sm shadow-[0_10px_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 hover:scale-[1.02] transition-all"
+          className="w-full py-4 rounded-2xl bg-white text-blue-brand-950 font-black text-sm shadow-[0_10px_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 hover:scale-[1.02] transition-all"
         >
           <Zap size={16} fill="black" />
           SALVAR PLANO DA RESERVA
@@ -261,7 +261,7 @@ function ReservaPlanoCard({ icon: Icon, label, value }: { icon: LucideIcon; labe
 
 function ReservaAssetStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-amber-500/15 bg-zinc-950/35 p-4">
+    <div className="rounded-2xl border border-gold-500/15 bg-blue-brand-950/35 p-4">
       <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{label}</p>
       <p className="mt-1 text-sm font-black text-zinc-100">{value}</p>
     </div>
@@ -271,7 +271,7 @@ function ReservaAssetStat({ label, value }: { label: string; value: string }) {
 function ObjetivosAguardandoSection({ objetivos }: { objetivos: NonNullable<PlanoEspecifico["objetivos_registrados"]> }) {
   if (objetivos.length === 0) {
     return (
-      <div className="mt-4 rounded-2xl border border-border/20 bg-zinc-950/35 p-4 text-xs text-zinc-500">
+      <div className="mt-4 rounded-2xl border border-border/20 bg-blue-brand-950/35 p-4 text-xs text-zinc-500">
         Nenhum objetivo foi encontrado para a próxima fase.
       </div>
     );
@@ -280,7 +280,7 @@ function ObjetivosAguardandoSection({ objetivos }: { objetivos: NonNullable<Plan
   return (
     <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
       {objetivos.map((objetivo) => (
-        <article key={objetivo.id} className="rounded-2xl border border-border/20 bg-zinc-950/35 p-4">
+        <article key={objetivo.id} className="rounded-2xl border border-border/20 bg-blue-brand-950/35 p-4">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-black text-white">{objetivo.label}</p>
             <span className="rounded-full border border-primary-500/20 bg-primary-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary-300">
@@ -341,12 +341,12 @@ export function OutputEspecifico({ plano, onBack }: Props) {
     >
       {/* Header com Score */}
       <div className="flex items-center justify-between gap-4 bg-surface-light/50 p-4 rounded-2xl border border-border/30">
-        <button onClick={onBack} className="p-2 rounded-xl hover:bg-zinc-800 transition-all text-zinc-400">
+        <button onClick={onBack} className="p-2 rounded-xl hover:bg-blue-brand-800 transition-all text-zinc-400">
           <ArrowLeft size={20} />
         </button>
         <div className="flex flex-col items-center flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <Trophy size={16} className="text-amber-500" />
+            <Trophy size={16} className="text-gold-500" />
             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Score do Plano</span>
           </div>
           <div className="flex items-baseline gap-1">
@@ -354,7 +354,7 @@ export function OutputEspecifico({ plano, onBack }: Props) {
             <span className="text-xs font-bold text-zinc-500">/100</span>
           </div>
         </div>
-        <div className={`px-4 py-2 rounded-xl border ${analysis.planScore.score >= 70 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-amber-500/30 bg-amber-500/10 text-amber-400'}`}>
+        <div className={`px-4 py-2 rounded-xl border ${analysis.planScore.score >= 70 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-gold-500/30 bg-gold-500/10 text-gold-400'}`}>
           <span className="text-xs font-black uppercase tracking-tighter">{analysis.planScore.rating}</span>
         </div>
       </div>
@@ -391,7 +391,7 @@ export function OutputEspecifico({ plano, onBack }: Props) {
 
         <div className="grid grid-cols-1 gap-2">
           {chartData.map((item: ChartItem, index: number) => (
-            <div key={item.name} className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/50 border border-border/10">
+            <div key={item.name} className="flex items-center justify-between p-3 rounded-xl bg-blue-brand-900/50 border border-border/10">
               <div className="flex items-center gap-3">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                 <span className="text-[11px] font-bold text-zinc-300">{item.name}</span>
@@ -406,7 +406,7 @@ export function OutputEspecifico({ plano, onBack }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className={`p-5 rounded-3xl border ${STATUS_BGS[analysis.trafficLight.viability.status]} flex flex-col items-center text-center`}>
           <div className="mb-3 p-3 bg-white/5 rounded-2xl">
-            <TrendingUp size={24} className={analysis.trafficLight.viability.status === 'green' ? 'text-emerald-500' : 'text-amber-500'} />
+            <TrendingUp size={24} className={analysis.trafficLight.viability.status === 'green' ? 'text-emerald-500' : 'text-gold-500'} />
           </div>
           <h4 className="text-xs font-bold text-zinc-400 uppercase mb-1">Probabilidade de Sucesso</h4>
           <p className="text-3xl font-black text-white">
@@ -450,7 +450,7 @@ export function OutputEspecifico({ plano, onBack }: Props) {
       <div className="pt-6">
         <button 
           onClick={() => window.location.href = '/dashboard'}
-          className="w-full py-4 rounded-2xl bg-white text-black font-black text-sm shadow-[0_10px_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 hover:scale-[1.02] transition-all"
+          className="w-full py-4 rounded-2xl bg-white text-blue-brand-950 font-black text-sm shadow-[0_10px_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 hover:scale-[1.02] transition-all"
         >
           <Zap size={16} fill="black" />
           SALVAR PLANO E FINALIZAR

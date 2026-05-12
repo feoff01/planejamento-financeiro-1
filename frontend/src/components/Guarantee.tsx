@@ -14,7 +14,7 @@ export function Guarantee() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative glass-panel rounded-3xl p-8 md:p-12 border border-primary-500/20 overflow-hidden text-center md:text-left flex flex-col md:flex-row items-center gap-8 md:gap-12 shadow-[0_0_40px_rgba(245,158,11,0.05)]"
+          className="relative glass-panel rounded-3xl p-8 md:p-12 border border-primary-500/20 overflow-hidden text-center md:text-left flex flex-col md:flex-row items-center gap-8 md:gap-12 shadow-[0_0_40px_rgba(201, 162, 75,0.05)]"
         >
           {/* Fundo dourado suave no cartão */}
           <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent pointer-events-none" />

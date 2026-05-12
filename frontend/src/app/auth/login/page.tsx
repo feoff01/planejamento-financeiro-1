@@ -40,8 +40,8 @@ export default function LoginPage() {
         className="mb-8"
       >
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-orange-600 rounded-lg flex items-center justify-center">
-            <span className="text-black font-bold text-lg leading-none">S</span>
+          <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-gold-600 rounded-lg flex items-center justify-center">
+            <span className="text-blue-brand-950 font-bold text-lg leading-none">S</span>
           </div>
           <span className="font-bold text-xl tracking-tight">
             Synapta<span className="text-primary-500">Invest</span>
@@ -134,7 +134,7 @@ export default function LoginPage() {
             disabled={isLoading}
             whileHover={{ scale: isLoading ? 1 : 1.02 }}
             whileTap={{ scale: isLoading ? 1 : 0.98 }}
-            className="w-full py-3.5 rounded-full font-semibold text-sm bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-orange-500 text-black flex items-center justify-center gap-2 glow-effect transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+            className="w-full py-3.5 rounded-full font-semibold text-sm bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-gold-500 text-blue-brand-950 flex items-center justify-center gap-2 glow-effect transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed mt-2"
           >
             {isLoading ? (
               <>

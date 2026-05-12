@@ -9,9 +9,9 @@ import { Search, Target, TrendingUp, Bot, Sparkles, X, ChevronRight, BrainCircui
 
 function ScreeningMockup() {
   return (
-    <div className="w-full h-full bg-zinc-950 p-4 flex flex-col gap-3 font-mono text-xs">
+    <div className="w-full h-full bg-blue-brand-950 p-4 flex flex-col gap-3 font-mono text-xs">
       <div className="flex items-center justify-between">
-        <span className="text-amber-400 font-bold text-sm">PETR4</span>
+        <span className="text-gold-400 font-bold text-sm">PETR4</span>
         <span className="text-green-400 text-xs">▲ +2,14%</span>
       </div>
       <div className="flex items-end gap-1 h-14">
@@ -21,13 +21,13 @@ function ScreeningMockup() {
             initial={{ height: 0 }}
             animate={{ height: `${h}%` }}
             transition={{ duration: 0.6, delay: i * 0.04, ease: "easeOut" }}
-            className={`flex-1 rounded-sm ${i === 11 ? "bg-amber-400" : i % 2 === 0 ? "bg-zinc-600" : "bg-zinc-700"}`}
+            className={`flex-1 rounded-sm ${i === 11 ? "bg-gold-400" : i % 2 === 0 ? "bg-zinc-600" : "bg-zinc-700"}`}
           />
         ))}
       </div>
       <div className="grid grid-cols-2 gap-2">
         {[["P/L", "7.2"], ["ROE", "18%"], ["Div. Yield", "11%"], ["P/VP", "0.9"]].map(([label, val]) => (
-          <div key={label} className="bg-zinc-900 rounded-lg px-2 py-1.5 flex justify-between">
+          <div key={label} className="bg-blue-brand-900 rounded-lg px-2 py-1.5 flex justify-between">
             <span className="text-zinc-500">{label}</span>
             <span className="text-zinc-200 font-semibold">{val}</span>
           </div>
@@ -39,10 +39,10 @@ function ScreeningMockup() {
 
 function FinanceiroMockup() {
   return (
-    <div className="w-full h-full bg-zinc-950 p-4 flex flex-col gap-3 text-xs">
+    <div className="w-full h-full bg-blue-brand-950 p-4 flex flex-col gap-3 text-xs">
       <p className="text-zinc-400 font-medium text-[11px] uppercase tracking-wider">Seus objetivos</p>
       {[
-        { label: "Casa Própria", pct: 42, color: "bg-amber-500" },
+        { label: "Casa Própria", pct: 42, color: "bg-gold-500" },
         { label: "Reserva de Emergência", pct: 78, color: "bg-emerald-500" },
         { label: "Aposentadoria", pct: 15, color: "bg-blue-500" },
       ].map((g) => (
@@ -51,7 +51,7 @@ function FinanceiroMockup() {
             <span className="text-zinc-300">{g.label}</span>
             <span className="text-zinc-500">{g.pct}%</span>
           </div>
-          <div className="w-full bg-zinc-800 rounded-full h-1.5">
+          <div className="w-full bg-blue-brand-800 rounded-full h-1.5">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${g.pct}%` }}
@@ -61,9 +61,9 @@ function FinanceiroMockup() {
           </div>
         </div>
       ))}
-      <div className="mt-1 bg-zinc-900 rounded-xl p-3 flex justify-between items-center">
+      <div className="mt-1 bg-blue-brand-900 rounded-xl p-3 flex justify-between items-center">
         <span className="text-zinc-400 text-[11px]">Aporte mensal sugerido</span>
-        <span className="text-amber-400 font-bold text-sm">R$ 1.250</span>
+        <span className="text-gold-400 font-bold text-sm">R$ 1.250</span>
       </div>
     </div>
   );
@@ -79,7 +79,7 @@ function CarteiraMockup() {
   let cumulative = 0;
   const r = 30, cx = 40, cy = 40, circumference = 2 * Math.PI * r;
   return (
-    <div className="w-full h-full bg-zinc-950 p-4 flex flex-col gap-3 text-xs">
+    <div className="w-full h-full bg-blue-brand-950 p-4 flex flex-col gap-3 text-xs">
       <p className="text-zinc-400 font-medium text-[11px] uppercase tracking-wider">Alocação otimizada</p>
       <div className="flex items-center gap-4">
         <svg width="80" height="80" viewBox="0 0 80 80" className="shrink-0">
@@ -118,7 +118,7 @@ function CarteiraMockup() {
           ))}
         </div>
       </div>
-      <div className="bg-zinc-900 rounded-xl p-2.5 flex justify-between">
+      <div className="bg-blue-brand-900 rounded-xl p-2.5 flex justify-between">
         <span className="text-zinc-500">Retorno esperado</span>
         <span className="text-emerald-400 font-bold">+14,2% a.a.</span>
       </div>
@@ -133,10 +133,10 @@ function ChatMockup() {
     { from: "user", text: "E IVVB11?" },
   ];
   return (
-    <div className="w-full h-full bg-zinc-950 p-4 flex flex-col gap-2.5 text-xs">
+    <div className="w-full h-full bg-blue-brand-950 p-4 flex flex-col gap-2.5 text-xs">
       <div className="flex items-center gap-2 mb-1">
-        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-          <Sparkles size={10} className="text-black" />
+        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center">
+          <Sparkles size={10} className="text-blue-brand-950" />
         </div>
         <span className="text-zinc-300 font-semibold text-[11px]">Synapta IA</span>
       </div>
@@ -148,16 +148,16 @@ function ChatMockup() {
           transition={{ delay: i * 0.25, duration: 0.3 }}
           className={`max-w-[85%] rounded-2xl px-3 py-2 text-[11px] leading-relaxed ${
             m.from === "user"
-              ? "ml-auto bg-amber-500/20 text-amber-100 rounded-br-sm"
-              : "bg-zinc-800 text-zinc-200 rounded-bl-sm"
+              ? "ml-auto bg-gold-500/20 text-gold-100 rounded-br-sm"
+              : "bg-blue-brand-800 text-zinc-200 rounded-bl-sm"
           }`}
         >
           {m.text}
         </motion.div>
       ))}
-      <div className="mt-auto flex gap-2 bg-zinc-900 rounded-xl px-3 py-2">
+      <div className="mt-auto flex gap-2 bg-blue-brand-900 rounded-xl px-3 py-2">
         <span className="text-zinc-600 flex-1">Pergunte algo...</span>
-        <Bot size={14} className="text-amber-500" />
+        <Bot size={14} className="text-gold-500" />
       </div>
     </div>
   );
@@ -165,16 +165,16 @@ function ChatMockup() {
 
 function AiPortfolioMockup() {
   return (
-    <div className="w-full h-full bg-zinc-950 p-5 flex flex-col gap-3 font-mono text-xs relative overflow-hidden">
+    <div className="w-full h-full bg-blue-brand-950 p-5 flex flex-col gap-3 font-mono text-xs relative overflow-hidden">
       <div className="absolute -top-4 -right-4 p-4 opacity-[0.03]">
-        <BrainCircuit size={120} className="text-amber-500" />
+        <BrainCircuit size={120} className="text-gold-500" />
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/5 pb-3">
          <div className="flex flex-col">
             <span className="text-zinc-400 text-[10px] uppercase tracking-wider mb-1 flex items-center gap-1.5">
-               <Bot size={12} className="text-amber-500" />
+               <Bot size={12} className="text-gold-500" />
                Mix recomendado pela IA
             </span>
             <span className="text-zinc-100 font-bold text-sm">Carteira Crescimento</span>
@@ -193,9 +193,9 @@ function AiPortfolioMockup() {
          <div className="flex flex-col gap-1 text-right">
             <span className="text-zinc-500 text-[10px]">Risco (Volatilidade)</span>
             <div className="flex gap-1 justify-end">
-               <div className="w-3 h-1.5 bg-amber-500 rounded-sm"></div>
-               <div className="w-3 h-1.5 bg-amber-500 rounded-sm"></div>
-               <div className="w-3 h-1.5 bg-zinc-800 rounded-sm"></div>
+               <div className="w-3 h-1.5 bg-gold-500 rounded-sm"></div>
+               <div className="w-3 h-1.5 bg-gold-500 rounded-sm"></div>
+               <div className="w-3 h-1.5 bg-blue-brand-800 rounded-sm"></div>
             </div>
          </div>
       </div>
@@ -215,14 +215,14 @@ function AiPortfolioMockup() {
            <div key={t.ticker} className="flex flex-col gap-1.5">
               <div className="flex justify-between items-center text-xs px-1">
                  <span className="text-zinc-200 font-semibold">{t.ticker}</span>
-                 <span className="text-amber-400">{t.pct}</span>
+                 <span className="text-gold-400">{t.pct}</span>
               </div>
-              <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+              <div className="w-full h-1.5 bg-blue-brand-800 rounded-full overflow-hidden">
                  <motion.div 
                    initial={{ width: 0 }}
                    animate={{ width: t.pct }}
                    transition={{ duration: 1, delay: i * 0.15, ease: "easeOut" }}
-                   className="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full" 
+                   className="h-full bg-gradient-to-r from-gold-600 to-gold-400 rounded-full" 
                  />
               </div>
            </div>
@@ -363,7 +363,7 @@ function DetailModal({ isOpen, onClose, feature }: { isOpen: boolean; onClose: (
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-zinc-950/80 backdrop-blur-md"
+            className="absolute inset-0 bg-blue-brand-950/80 backdrop-blur-md"
           />
 
           {/* Modal Content */}
@@ -371,12 +371,12 @@ function DetailModal({ isOpen, onClose, feature }: { isOpen: boolean; onClose: (
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-2xl bg-zinc-900 border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] mt-4"
+            className="relative w-full max-w-2xl bg-blue-brand-900 border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] mt-4"
           >
             {/* Close Button */}
             <button
                onClick={onClose}
-               className="absolute top-4 right-4 w-8 h-8 z-20 rounded-full bg-zinc-800/50 flex items-center justify-center text-zinc-400 hover:text-white transition-colors border border-white/10 cursor-pointer"
+               className="absolute top-4 right-4 w-8 h-8 z-20 rounded-full bg-blue-brand-800/50 flex items-center justify-center text-zinc-400 hover:text-white transition-colors border border-white/10 cursor-pointer"
             >
                <X size={18} />
             </button>
@@ -401,7 +401,7 @@ function DetailModal({ isOpen, onClose, feature }: { isOpen: boolean; onClose: (
               {/* Stats Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-8">
                 {feature.details.stats.map((s, idx) => (
-                  <div key={idx} className="bg-zinc-800/50 rounded-2xl p-4 border border-white/5">
+                  <div key={idx} className="bg-blue-brand-800/50 rounded-2xl p-4 border border-white/5">
                     <p className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">{s.label}</p>
                     <p className="text-sm font-bold text-zinc-200">{s.value}</p>
                   </div>
@@ -426,10 +426,10 @@ function DetailModal({ isOpen, onClose, feature }: { isOpen: boolean; onClose: (
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t border-white/5 bg-zinc-900/50 shrink-0">
+            <div className="p-6 border-t border-white/5 bg-blue-brand-900/50 shrink-0">
                <button
                   onClick={onClose}
-                  className="w-full py-3 rounded-xl bg-primary-500 text-black font-bold hover:bg-primary-400 transition-all shadow-[0_8px_20px_-6px_rgba(245,158,11,0.4)] cursor-pointer"
+                  className="w-full py-3 rounded-xl bg-primary-500 text-blue-brand-950 font-bold hover:bg-primary-400 transition-all shadow-[0_8px_20px_-6px_rgba(201, 162, 75,0.4)] cursor-pointer"
                >
                   Fechar Detalhes
                </button>
@@ -491,21 +491,21 @@ export function Solutions() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className={`group glass-panel rounded-3xl overflow-hidden flex flex-col transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_12px_40px_-10px_rgba(245,158,11,0.12)] ${
+                className={`group glass-panel rounded-3xl overflow-hidden flex flex-col transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_12px_40px_-10px_rgba(201, 162, 75,0.12)] ${
                   f.fullWidth ? "md:col-span-2" : ""
                 } ${f.accent ? "border-primary-500/20" : "border-border"}`}
               >
                 <div className={`flex flex-col ${f.fullWidth ? "md:flex-row h-full" : ""}`}>
                   {/* Mockup area */}
-                  <div className={`relative overflow-hidden border-zinc-900 border-opacity-50 ${f.fullWidth ? "md:w-1/2 h-64 md:h-auto md:border-r border-b" : "h-48 border-b"}`}>
+                  <div className={`relative overflow-hidden border-blue-brand-900 border-opacity-50 ${f.fullWidth ? "md:w-1/2 h-64 md:h-auto md:border-r border-b" : "h-48 border-b"}`}>
                     <f.Mockup />
-                    <div className="absolute inset-0 z-20 bg-gradient-to-t from-zinc-950/90 via-transparent to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 z-20 bg-gradient-to-t from-blue-brand-950/90 via-transparent to-transparent pointer-events-none" />
                   </div>
 
                   {/* Content */}
                   <div className={`p-8 flex flex-col gap-4 flex-1 ${f.fullWidth ? "md:justify-center" : ""}`}>
                     <div className="flex items-center gap-2 mb-1">
-                      <div className={`p-1.5 rounded-lg ${f.accent ? "bg-primary-500/10 text-primary-400" : "bg-zinc-800 text-zinc-400"}`}>
+                      <div className={`p-1.5 rounded-lg ${f.accent ? "bg-primary-500/10 text-primary-400" : "bg-blue-brand-800 text-zinc-400"}`}>
                         <f.icon size={18} />
                       </div>
                       {f.fullWidth && (
@@ -535,7 +535,7 @@ export function Solutions() {
           <div className="mt-16 flex justify-center">
             <Link
               href="/auth/login"
-              className="w-full sm:w-auto min-w-[320px] justify-center px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-orange-500 text-black font-semibold rounded-full flex items-center gap-2 glow-effect transition-all cursor-pointer relative z-20"
+              className="w-full sm:w-auto min-w-[320px] justify-center px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-gold-500 text-blue-brand-950 font-semibold rounded-full flex items-center gap-2 glow-effect transition-all cursor-pointer relative z-20"
             >
               <motion.div
                 className="flex items-center gap-2"

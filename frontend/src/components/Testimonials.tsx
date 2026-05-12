@@ -51,7 +51,7 @@ export function Testimonials() {
                   {testi.avatar ? (
                     <Image src={testi.avatar} alt={testi.name} width={48} height={48} className="w-12 h-12 rounded-full object-cover shadow-lg border border-white/10" />
                   ) : (
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-black font-bold text-xl shadow-lg border border-white/10">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-blue-brand-950 font-bold text-xl shadow-lg border border-white/10">
                       {testi.name.charAt(0)}
                     </div>
                   )}

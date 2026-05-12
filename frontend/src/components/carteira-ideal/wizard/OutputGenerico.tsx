@@ -19,6 +19,8 @@ import {
 import { useState } from "react";
 import { OutputEspecifico } from "./OutputEspecifico";
 import type { PlanoEspecifico } from "./OutputEspecifico";
+import { Pricing } from "@/components/Pricing";
+import { ModalIntermediarioReserva } from "./ModalIntermediarioReserva";
 
 type Perfil = "conservador" | "moderado" | "arrojado";
 
@@ -123,6 +125,7 @@ type Motivo = {
 type Props = {
   resultado: Resultado;
   dadosCompletos: DadosCompletos;
+  onIgnorarReserva?: () => void;
 };
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
@@ -130,11 +133,14 @@ const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
 });
 
-export function OutputGenerico({ resultado, dadosCompletos }: Props) {
+export function OutputGenerico({ resultado, dadosCompletos, onIgnorarReserva }: Props) {
   const [showDetalhado, setShowDetalhado] = useState(false);
+  const [hasChosenPath, setHasChosenPath] = useState(false);
+
   const config = PERFIL_CONFIG[resultado.perfil];
   const narrativa = resultado.output_generico;
   const isReservaPlan = narrativa?.tipo_plano === "reserva_emergencia";
+
   const probMeta = resultado.motor.simulation.prob_meta;
   const objetivos = buildObjetivosResumo(dadosCompletos);
   const motivos = buildMotivos(resultado, objetivos);
@@ -155,12 +161,22 @@ export function OutputGenerico({ resultado, dadosCompletos }: Props) {
     return <OutputEspecifico plano={planoCompleto} onBack={() => setShowDetalhado(false)} />;
   }
 
+  if (isReservaPlan && !hasChosenPath) {
+    return (
+      <ModalIntermediarioReserva
+        onTracarReserva={() => setHasChosenPath(true)}
+        onPularReserva={() => {
+          if (onIgnorarReserva) onIgnorarReserva();
+        }}
+      />
+    );
+  }
+
   if (isReservaPlan && narrativa) {
     return (
       <ReservaGenerico
         narrativa={narrativa}
         objetivos={objetivos}
-        onOpenDetalhado={() => setShowDetalhado(true)}
       />
     );
   }
@@ -263,14 +279,13 @@ export function OutputGenerico({ resultado, dadosCompletos }: Props) {
 function ReservaGenerico({
   narrativa,
   objetivos,
-  onOpenDetalhado,
 }: {
   narrativa: OutputGenericoNarrativa;
   objetivos: ObjetivoResumo[];
-  onOpenDetalhado: () => void;
 }) {
   const metricas = narrativa.metricas;
   const reservaProgress = getReservaProgress(metricas.reserva_atual, metricas.reserva_ideal);
+  const ativo = metricas.plano_ativos?.[0];
 
   return (
     <motion.div
@@ -376,6 +391,34 @@ function ReservaGenerico({
             </div>
           </section>
 
+          {ativo && (
+            <div className="rounded-3xl border border-amber-500/25 bg-amber-500/10 p-6 shadow-[0_18px_60px_rgba(245,158,11,0.08)]">
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Droplets size={18} className="text-amber-400" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-white">Invista exatamente aqui</h3>
+                  </div>
+                  <p className="mt-2 text-3xl font-black leading-tight text-amber-200">{ativo.nome}</p>
+                </div>
+                <span className="w-fit rounded-2xl border border-amber-500/30 bg-amber-500/15 px-4 py-2 text-xs font-black text-amber-200">
+                  {ativo.percentual}% dos aportes da reserva
+                </span>
+              </div>
+
+              <p className="max-w-3xl text-sm leading-relaxed text-zinc-300">{ativo.explicacao}</p>
+
+              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <ReservaAssetStat label="Valor de destino" value={formatCurrency(ativo.valor_destino)} />
+                <ReservaAssetStat label="Aporte nesse ativo" value={formatCurrency(ativo.aporte_mensal)} />
+                <ReservaAssetStat label="Retorno líquido a.a." value={formatPercent(ativo.retorno_liquido_aa)} />
+                <ReservaAssetStat label="Liquidez" value="Diária" />
+                <ReservaAssetStat label="Volatilidade a.a." value={formatPercent(ativo.volatilidade_aa)} />
+                <ReservaAssetStat label="Prazo do título" value={formatPrazoAnos(ativo.prazo_anos)} />
+              </div>
+            </div>
+          )}
+
           <ObjetivosSection objetivos={objetivos} bloqueados />
 
           <div className="flex items-start gap-3 rounded-2xl border border-primary-500/25 bg-primary-500/10 p-4">
@@ -390,16 +433,13 @@ function ReservaGenerico({
             </div>
           </div>
 
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onOpenDetalhado}
-            className="flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-primary-500 to-orange-500 px-5 py-4 text-sm font-black text-black shadow-[0_18px_50px_rgba(245,158,11,0.24)] transition-all hover:from-primary-400 hover:to-orange-400"
-          >
-            <ShieldCheck size={18} />
-            <span>{narrativa.cta_label}</span>
-            <ArrowRight size={18} />
-          </motion.button>
+          <div className="mt-12 rounded-3xl border border-border/40 bg-zinc-950/40 p-1 md:p-8">
+            <div className="mb-4 text-center">
+              <h2 className="text-2xl font-black text-white">A reserva é grátis. Seu futuro é Pro.</h2>
+              <p className="text-zinc-400 text-sm mt-2">Você já tem o que precisa para a reserva. Para todo o resto, a Synapta te ajuda.</p>
+            </div>
+            <Pricing showFree={false} compact />
+          </div>
         </div>
       </section>
     </motion.div>
@@ -867,3 +907,27 @@ const ALOCACAO_ITEMS: Array<{
     icon: Droplets,
   },
 ];
+
+function ReservaAssetStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-amber-500/15 bg-zinc-950/35 p-4">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{label}</p>
+      <p className="mt-1 text-sm font-black text-zinc-100">{value}</p>
+    </div>
+  );
+}
+
+function formatPercent(value: number) {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatPrazoAnos(value: number) {
+  if (value <= 0) return "Sem prazo";
+  return value === 1 ? "1 ano" : `${value.toFixed(1).replace(".", ",")} anos`;
+}
+
+function formatMesesReserva(value: number | null) {
+  if (value === null) return "Definir aporte";
+  if (value <= 0) return "Agora";
+  return value === 1 ? "1 mês" : `${value} meses`;
+}

@@ -37,6 +37,9 @@ export const DiagnosticoSchema = z.object({
   reacao_queda: z.enum(["vender_tudo", "espera_preocupado", "mantenho_tranquilo", "compra_mais"]),
   experiencia_rv: z.enum(["nunca", "pouca", "media", "experiente"]),
   percentual_risco: z.enum(["ate_10", "ate_30", "ate_60", "mais_60"]),
+  
+  // Controle de Fluxo
+  ignorar_reserva: z.boolean().optional().default(false),
 }).refine((data) => data.valor_reserva <= data.patrimonio_total, {
   message: "A reserva não pode ser maior que o patrimônio total.",
   path: ["valor_reserva"],

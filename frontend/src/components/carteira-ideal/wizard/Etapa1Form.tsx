@@ -169,7 +169,7 @@ export function Etapa1Form({ onNext }: Props) {
               step="5"
               value={porcentagemInvestimento}
               onChange={(e) => handleSliderChange(Number(e.target.value))}
-              className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-primary-500"
+              className="w-full h-2 bg-blue-brand-800 rounded-lg appearance-none cursor-pointer accent-primary-500"
             />
             
             <div className="flex justify-between text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
@@ -190,7 +190,7 @@ export function Etapa1Form({ onNext }: Props) {
 
       <button
         type="submit"
-        className="w-full py-3.5 rounded-full font-semibold text-sm bg-gradient-to-r from-primary-500 to-primary-600 text-black flex items-center justify-center gap-2 glow-effect cursor-pointer hover:from-primary-600 hover:to-orange-500 transition-all"
+        className="w-full py-3.5 rounded-full font-semibold text-sm bg-gradient-to-r from-primary-500 to-primary-600 text-blue-brand-950 flex items-center justify-center gap-2 glow-effect cursor-pointer hover:from-primary-600 hover:to-gold-500 transition-all"
       >
         Continuar <ArrowRight size={16} />
       </button>

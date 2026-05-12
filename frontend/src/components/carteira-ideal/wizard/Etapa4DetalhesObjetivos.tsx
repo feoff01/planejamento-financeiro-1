@@ -89,7 +89,7 @@ export function Etapa4DetalhesObjetivos({ onNext, onBack, objetivos = [] }: Prop
                               const raw = e.target.value.replace(/\D/g, "");
                               onChange(Number(raw) / 100);
                             }}
-                            className="w-full bg-zinc-900 border border-zinc-700 rounded-xl py-2.5 pl-10 pr-4 text-xs text-white focus:border-primary-500 outline-none transition-all"
+                            className="w-full bg-blue-brand-900 border border-zinc-700 rounded-xl py-2.5 pl-10 pr-4 text-xs text-white focus:border-primary-500 outline-none transition-all"
                           />
                         );
                       }}
@@ -103,18 +103,18 @@ export function Etapa4DetalhesObjetivos({ onNext, onBack, objetivos = [] }: Prop
                 {/* Natureza */}
                 <div>
                   <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Natureza do Sonho</p>
-                  <div className="flex bg-zinc-900 p-1 rounded-xl border border-zinc-700">
+                  <div className="flex bg-blue-brand-900 p-1 rounded-xl border border-zinc-700">
                     <button
                       type="button"
                       onClick={() => setValue(`${pathPrefix}.natureza` as any, "need")}
-                      className={`flex-1 py-2 rounded-lg text-[10px] font-bold transition-all ${currentNatureza === "need" ? "bg-primary-500 text-black shadow-md" : "text-zinc-500 hover:text-zinc-300"}`}
+                      className={`flex-1 py-2 rounded-lg text-[10px] font-bold transition-all ${currentNatureza === "need" ? "bg-primary-500 text-blue-brand-950 shadow-md" : "text-zinc-500 hover:text-zinc-300"}`}
                     >
                       Necessidade 🛡️
                     </button>
                     <button
                       type="button"
                       onClick={() => setValue(`${pathPrefix}.natureza` as any, "want")}
-                      className={`flex-1 py-2 rounded-lg text-[10px] font-bold transition-all ${currentNatureza === "want" ? "bg-primary-500 text-black shadow-md" : "text-zinc-500 hover:text-zinc-300"}`}
+                      className={`flex-1 py-2 rounded-lg text-[10px] font-bold transition-all ${currentNatureza === "want" ? "bg-primary-500 text-blue-brand-950 shadow-md" : "text-zinc-500 hover:text-zinc-300"}`}
                     >
                       Desejo 🚀
                     </button>
@@ -139,7 +139,7 @@ export function Etapa4DetalhesObjetivos({ onNext, onBack, objetivos = [] }: Prop
                       step="1"
                       {...field}
                       onChange={(e) => field.onChange(Number(e.target.value))}
-                      className="w-full h-1.5 bg-zinc-800 rounded-full appearance-none cursor-pointer accent-amber-500"
+                      className="w-full h-1.5 bg-blue-brand-800 rounded-full appearance-none cursor-pointer accent-gold-500"
                     />
                   )}
                 />
@@ -161,7 +161,7 @@ export function Etapa4DetalhesObjetivos({ onNext, onBack, objetivos = [] }: Prop
                       >
                         <Star 
                           size={20} 
-                          className={star <= currentPrioridade ? "fill-amber-500 text-amber-500" : "text-zinc-700"} 
+                          className={star <= currentPrioridade ? "fill-gold-500 text-gold-500" : "text-zinc-700"} 
                         />
                       </button>
                     ))}
@@ -179,8 +179,8 @@ export function Etapa4DetalhesObjetivos({ onNext, onBack, objetivos = [] }: Prop
                         onClick={() => setValue(`${pathPrefix}.liquidez` as any, liq)}
                         className={`py-1.5 rounded-lg border text-[9px] font-bold uppercase tracking-widest transition-all ${
                           currentLiquidez === liq
-                            ? "bg-amber-500/10 border-amber-500 text-amber-500"
-                            : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600"
+                            ? "bg-gold-500/10 border-gold-500 text-gold-500"
+                            : "bg-blue-brand-900 border-blue-brand-800 text-zinc-500 hover:border-zinc-600"
                         }`}
                       >
                         {liq === "low" ? "Baixa" : liq === "medium" ? "Média" : "Alta"}
@@ -198,7 +198,7 @@ export function Etapa4DetalhesObjetivos({ onNext, onBack, objetivos = [] }: Prop
         <button type="button" onClick={onBack} className="flex-1 py-3 rounded-full text-sm font-medium border border-border text-zinc-400 hover:border-zinc-500 transition-all cursor-pointer flex items-center justify-center gap-2">
           <ArrowLeft size={16} /> Voltar
         </button>
-        <button type="submit" className="flex-[2] py-3 rounded-full font-semibold text-sm bg-gradient-to-r from-primary-500 to-primary-600 text-black flex items-center justify-center gap-2 glow-effect cursor-pointer hover:from-primary-600 hover:to-orange-500 transition-all">
+        <button type="submit" className="flex-[2] py-3 rounded-full font-semibold text-sm bg-gradient-to-r from-primary-500 to-primary-600 text-blue-brand-950 flex items-center justify-center gap-2 glow-effect cursor-pointer hover:from-primary-600 hover:to-gold-500 transition-all">
           Definir Risco <ArrowRight size={16} />
         </button>
       </div>

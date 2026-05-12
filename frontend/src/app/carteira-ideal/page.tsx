@@ -16,7 +16,7 @@ export default function DashboardPage() {
 
       <main className="flex-1 ml-0 md:ml-64 min-h-screen">
         <div className="fixed top-1/4 right-1/4 w-[400px] h-[400px] bg-primary-600/8 rounded-full blur-[140px] pointer-events-none" />
-        <div className="fixed bottom-1/4 left-1/3 w-[300px] h-[300px] bg-amber-900/8 rounded-full blur-[120px] pointer-events-none" />
+        <div className="fixed bottom-1/4 left-1/3 w-[300px] h-[300px] bg-gold-900/8 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="relative z-10 px-6 py-10 md:px-12 md:py-14 flex flex-col items-center justify-start min-h-screen">
           <AnimatePresence initial={false}>

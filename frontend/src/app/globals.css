@@ -1,19 +1,41 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-500: #f59e0b; /* amber-500 */
-  --color-primary-600: #d97706; /* amber-600 */
-  --color-background: #0a0a0a;
-  --color-surface: #171717;
-  --color-surface-light: #262626;
-  --color-border: #333333;
+  --color-gold-300: #F3DE9A;
+  --color-gold-400: #E5C77E;
+  --color-gold-500: #C9A24B;
+  --color-gold-600: #A8863A;
+  --color-gold-900: #54431D;
+  
+  --color-blue-brand-800: #1C4075;
+  --color-blue-brand-900: #13315C;
+  --color-blue-brand-950: #0B2545;
+
+  --color-primary-400: #E5C77E;
+  --color-primary-500: #C9A24B;
+  --color-primary-600: #A8863A;
+  
+  --color-background: #0B2545;
+  --color-surface: #13315C;
+  --color-surface-light: #1C4075;
+  --color-border: rgba(229, 199, 126, 0.15);
+
+  /* Substituição de cinzas para brancos transparentes (melhor legibilidade no dark theme) */
+  --color-zinc-100: #ffffffF2;
+  --color-zinc-200: #ffffffE6;
+  --color-zinc-300: #ffffffCC;
+  --color-zinc-400: #ffffffA6;
+  --color-zinc-500: #ffffff80;
+  --color-zinc-600: #ffffff4D;
+  --color-zinc-700: #ffffff26;
+  --color-zinc-800: #ffffff0D;
 }
 
 @custom-variant dark (&:is(.dark *));
 
 @layer base {
   :root {
-    --background: #0a0a0a;
+    --background: #0B2545;
     --foreground: #ededed;
   }
 
@@ -34,18 +56,18 @@ body {
 }
 
 .glass-panel {
-  background: rgba(23, 23, 23, 0.6);
+  background: rgba(19, 49, 92, 0.6); /* #13315C com opacidade */
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(229, 199, 126, 0.15); /* light gold border */
 }
 
 .gradient-text {
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-image: linear-gradient(to right, #f59e0b, #d97706);
+  background-image: linear-gradient(to right, #E5C77E, #C9A24B);
 }
 
 .glow-effect {
-  box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+  box-shadow: 0 0 20px rgba(201, 162, 75, 0.25); /* #C9A24B (gold-500) com 25% opacity */
 }

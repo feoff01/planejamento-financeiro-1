@@ -36,6 +36,7 @@ export function DiagnosticoWizard({ onResultadoVisibleChange }: Props) {
     voltarEtapa,
     submeter,
     dados,
+    ignorarReservaERefetch,
   } = useDiagnostico();
 
   const progressoPercent = ((etapaAtual - 1) / 5) * 100;
@@ -61,7 +62,7 @@ export function DiagnosticoWizard({ onResultadoVisibleChange }: Props) {
             <motion.div
               animate={{ width: `${progressoPercent}%` }}
               transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="h-full bg-gradient-to-r from-primary-600 via-primary-500 to-amber-400 rounded-full"
+              className="h-full bg-gradient-to-r from-primary-600 via-primary-500 to-gold-400 rounded-full"
             />
           </div>
 
@@ -135,7 +136,7 @@ export function DiagnosticoWizard({ onResultadoVisibleChange }: Props) {
             {etapaAtual === 3 && <Etapa3Form onNext={avancarEtapa} onBack={voltarEtapa} />}
             {etapaAtual === 4 && <Etapa4DetalhesObjetivos onNext={avancarEtapa} onBack={voltarEtapa} objetivos={dados.objetivos_selecionados ?? []} />}
             {etapaAtual === 5 && <Etapa5Form onNext={submeter} onBack={voltarEtapa} isLoading={isLoading} />}
-            {etapaAtual === 6 && resultado && <OutputGenerico resultado={resultado} dadosCompletos={dados} />}
+            {etapaAtual === 6 && resultado && <OutputGenerico resultado={resultado} dadosCompletos={dados} onIgnorarReserva={ignorarReservaERefetch} />}
           </motion.div>
         )}
       </AnimatePresence>

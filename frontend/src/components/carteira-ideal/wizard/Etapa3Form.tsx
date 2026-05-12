@@ -112,7 +112,7 @@ export function Etapa3Form({ onNext, onBack }: Props) {
               <button
                 type="button"
                 onClick={handleAddOutro}
-                className="bg-primary-500 text-black px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary-400 transition-colors cursor-pointer"
+                className="bg-primary-500 text-blue-brand-950 px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary-400 transition-colors cursor-pointer"
               >
                 Adicionar
               </button>
@@ -142,7 +142,7 @@ export function Etapa3Form({ onNext, onBack }: Props) {
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.8, opacity: 0 }}
-                  className="flex items-center gap-2 bg-zinc-800 border border-zinc-700 pl-3 pr-1 py-1.5 rounded-full"
+                  className="flex items-center gap-2 bg-blue-brand-800 border border-zinc-700 pl-3 pr-1 py-1.5 rounded-full"
                 >
                   <span className="text-sm">{obj.emoji}</span>
                   <span className="text-xs font-medium text-white">{obj.label}</span>
@@ -164,7 +164,7 @@ export function Etapa3Form({ onNext, onBack }: Props) {
         <button type="button" onClick={onBack} className="flex-1 py-3 rounded-full text-sm font-medium border border-border text-zinc-400 hover:border-zinc-500 transition-all cursor-pointer flex items-center justify-center gap-2">
           <ArrowLeft size={16} /> Voltar
         </button>
-        <button type="submit" className="flex-[2] py-3 rounded-full font-semibold text-sm bg-gradient-to-r from-primary-500 to-primary-600 text-black flex items-center justify-center gap-2 glow-effect cursor-pointer hover:from-primary-600 hover:to-orange-500 transition-all">
+        <button type="submit" className="flex-[2] py-3 rounded-full font-semibold text-sm bg-gradient-to-r from-primary-500 to-primary-600 text-blue-brand-950 flex items-center justify-center gap-2 glow-effect cursor-pointer hover:from-primary-600 hover:to-gold-500 transition-all">
           Continuar para Detalhes <ArrowRight size={16} />
         </button>
       </div>

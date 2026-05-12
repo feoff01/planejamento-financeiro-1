@@ -51,7 +51,7 @@
 ## 5. Consistência Visual
 
 - [ ] Componentes reutilizados de forma consistente — botão primário sempre igual em toda a app.
-- [ ] Paleta de cores do Synapta aplicada de forma uniforme (preto, cinza escuro, dourado).
+- [ ] Paleta de cores do Synapta aplicada de forma uniforme (azul escuro, azul médio, dourado).
 - [ ] Ícones do mesmo conjunto (ex: Lucide Icons) — não misturar estilos.
 - [ ] Espaçamentos consistentes usando o sistema de design definido.
 

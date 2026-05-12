@@ -8,7 +8,7 @@ const LOADING_STEPS = [
   { icon: Brain, text: "Analisando seu perfil de risco...", color: "text-blue-400" },
   { icon: BarChart3, text: "Simulando 10.000 cenários de mercado...", color: "text-primary-400" },
   { icon: Shield, text: "Otimizando sua alocação de ativos...", color: "text-emerald-400" },
-  { icon: Sparkles, text: "Preparando seu plano personalizado...", color: "text-amber-400" },
+  { icon: Sparkles, text: "Preparando seu plano personalizado...", color: "text-gold-400" },
 ];
 
 export function EtapaLoadingScreen() {
@@ -37,7 +37,7 @@ export function EtapaLoadingScreen() {
       <motion.div
         animate={{ scale: [1, 1.08, 1] }}
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        className="relative z-10 w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-500/20 to-amber-500/20 border border-primary-500/30 flex items-center justify-center mb-8"
+        className="relative z-10 w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-500/20 to-gold-500/20 border border-primary-500/30 flex items-center justify-center mb-8"
       >
         <AnimatePresence mode="wait">
           <motion.div
@@ -84,7 +84,7 @@ export function EtapaLoadingScreen() {
       </div>
 
       {/* Barra de progresso sutil */}
-      <div className="relative z-10 w-48 h-1 bg-zinc-800 rounded-full mt-6 overflow-hidden">
+      <div className="relative z-10 w-48 h-1 bg-blue-brand-800 rounded-full mt-6 overflow-hidden">
         <motion.div
           animate={{ x: ["-100%", "100%"] }}
           transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}

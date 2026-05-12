@@ -47,7 +47,7 @@ export function Hero() {
 
       {/* Background Gradients */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-600/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-amber-900/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-gold-900/20 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="container mx-auto px-6 relative z-10 w-full max-w-7xl">
         <div className="flex flex-col lg:flex-row items-center gap-2 lg:gap-16">
@@ -125,7 +125,7 @@ export function Hero() {
                       onClick={() => setActiveIdx(i)}
                       className={`block h-1.5 rounded-full transition-all duration-300 ${
                         activeIdx === i
-                          ? "bg-primary-500 w-4 shadow-[0_0_8px_rgba(245,158,11,0.8)]"
+                          ? "bg-primary-500 w-4 shadow-[0_0_8px_rgba(201, 162, 75,0.8)]"
                           : "bg-white/40 w-1.5"
                       }`}
                     />
@@ -172,7 +172,7 @@ export function Hero() {
                         initial={{ width: 0 }}
                         animate={{ width: `${current.synaptaPct}%` }}
                         transition={{ duration: 1.4, delay: 0.15, type: "spring", stiffness: 45, damping: 15 }}
-                        className="h-full bg-gradient-to-r from-primary-700 via-primary-500 to-amber-300 rounded-full relative overflow-hidden"
+                        className="h-full bg-gradient-to-r from-primary-700 via-primary-500 to-gold-300 rounded-full relative overflow-hidden"
                       >
                         <motion.div
                           animate={{ x: ["-100%", "400%"] }}
@@ -188,7 +188,7 @@ export function Hero() {
               {/* CTA Button */}
               <Link
                 href="/auth/login"
-                className="mt-6 w-full justify-center px-6 py-4 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-orange-500 text-black font-semibold rounded-full flex items-center gap-2 glow-effect transition-all cursor-pointer relative z-20"
+                className="mt-6 w-full justify-center px-6 py-4 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-gold-500 text-blue-brand-950 font-semibold rounded-full flex items-center gap-2 glow-effect transition-all cursor-pointer relative z-20"
               >
                 <motion.div
                   className="flex items-center gap-2"

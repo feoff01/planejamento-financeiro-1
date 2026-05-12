@@ -33,7 +33,7 @@ export function ErrorModal({ isOpen, message, onClose, onRetry }: Props) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
+            className="fixed inset-0 bg-blue-brand-950/80 backdrop-blur-sm z-[100]"
           />
 
           {/* Modal Container */}
@@ -42,7 +42,7 @@ export function ErrorModal({ isOpen, message, onClose, onRetry }: Props) {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="w-full max-w-sm bg-zinc-900 border border-red-500/30 rounded-3xl p-6 shadow-[0_20px_50px_rgba(239,68,68,0.2)] pointer-events-auto"
+              className="w-full max-w-sm bg-blue-brand-900 border border-red-500/30 rounded-3xl p-6 shadow-[0_20px_50px_rgba(239,68,68,0.2)] pointer-events-auto"
             >
               <div className="flex flex-col items-center text-center">
                 <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mb-4 border border-red-500/20">
@@ -58,14 +58,14 @@ export function ErrorModal({ isOpen, message, onClose, onRetry }: Props) {
                   {onRetry && (
                     <button
                       onClick={onRetry}
-                      className="flex-1 bg-white text-black py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-zinc-200 transition-colors"
+                      className="flex-1 bg-white text-blue-brand-950 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-zinc-200 transition-colors"
                     >
                       <RefreshCcw size={16} /> Tentar de novo
                     </button>
                   )}
                   <button
                     onClick={onClose}
-                    className={`flex-1 py-3 rounded-xl font-bold text-sm border border-zinc-800 text-zinc-400 hover:text-white transition-colors ${!onRetry ? 'w-full' : ''}`}
+                    className={`flex-1 py-3 rounded-xl font-bold text-sm border border-blue-brand-800 text-zinc-400 hover:text-white transition-colors ${!onRetry ? 'w-full' : ''}`}
                   >
                     Fechar
                   </button>

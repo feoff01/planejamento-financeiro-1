@@ -74,8 +74,11 @@ export class OutputGenericoNarrativeService {
     const reservaIdeal = dados.gastos_mensais * 6;
     const reservaAtual = dados.valor_reserva;
     const gapReserva = Math.max(reservaIdeal - reservaAtual, 0);
-    const status = this.classificar(dados.meses_reserva, probabilidade);
-    const faseEstrategica = this.faseEstrategicaPara(dados.meses_reserva);
+    const mesesEfetivos = dados.ignorar_reserva ? 999 : dados.meses_reserva;
+    const status = this.classificar(mesesEfetivos, probabilidade);
+    const faseEstrategica = dados.ignorar_reserva 
+      ? "investir_para_objetivos" 
+      : this.faseEstrategicaPara(dados.meses_reserva);
     const tipoPlano: OutputGenericoTipoPlano =
       faseEstrategica === "investir_para_objetivos" ? "objetivos" : "reserva_emergencia";
     const bloquearCarteiraObjetivos = tipoPlano === "reserva_emergencia";

@@ -30,8 +30,8 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex fixed top-0 left-0 h-full w-64 bg-surface border-r border-white/5 flex-col z-40 pt-6 pb-8">
       <div className="px-6 mb-10 flex items-center gap-2.5">
-        <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-orange-600 rounded-lg flex items-center justify-center shrink-0">
-          <span className="text-black font-bold text-base leading-none">S</span>
+        <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-gold-600 rounded-lg flex items-center justify-center shrink-0">
+          <span className="text-blue-brand-950 font-bold text-base leading-none">S</span>
         </div>
         <span className="font-bold text-lg tracking-tight">
           Synapta<span className="text-primary-500">Invest</span>
@@ -85,7 +85,7 @@ export function Sidebar() {
 
         <div className="pt-4 border-t border-white/5 flex items-center justify-between px-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-full bg-blue-brand-800 flex items-center justify-center shrink-0">
               <User size={14} className="text-zinc-400" />
             </div>
             <span className="text-sm font-medium text-zinc-300 truncate max-w-[100px]">{userName}</span>

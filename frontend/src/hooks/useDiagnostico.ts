@@ -119,6 +119,28 @@ export function useDiagnostico() {
     }
   };
 
+  const ignorarReservaERefetch = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    const dadosCompletos = { ...dados, ignorar_reserva: true } as DiagnosticoCompleto;
+
+    try {
+      const res = await DiagnosticoService.salvar(dadosCompletos);
+      setResultado(res);
+      setEtapaAtual(6);
+    } catch (err: any) {
+      setError(err.message);
+      if (err.status === 401 || err.message.includes("sessão expirada") || err.message.includes("não autenticado")) {
+        setTimeout(() => {
+          router.push("/auth/login");
+        }, 2000);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const limparErro = () => setError(null);
 
   return {
@@ -131,5 +153,6 @@ export function useDiagnostico() {
     avancarEtapa,
     voltarEtapa,
     submeter,
+    ignorarReservaERefetch,
   };
 }
