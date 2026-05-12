@@ -103,6 +103,7 @@ export function useDiagnostico() {
 
     try {
       const res = await DiagnosticoService.salvar(dadosCompletos);
+      setDados(dadosCompletos); // Sincroniza o estado para futuros refetches
       setResultado(res);
       setEtapaAtual(6); // Etapa 6 = Resultado
     } catch (err: any) {
