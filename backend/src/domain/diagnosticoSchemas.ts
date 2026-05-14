@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// ── Schema completo de validação do payload ──────────────────────────────────
 export const DiagnosticoSchema = z.object({
   // Etapa 1
   idade: z.number().min(18).max(100),
@@ -11,8 +10,6 @@ export const DiagnosticoSchema = z.object({
   // Etapa 2
   patrimonio_total: z.number().min(0),
   tipos_ativos: z.array(z.string()).optional().default([]),
-  valor_reserva: z.number().min(0),
-  meses_reserva: z.number().min(0),
 
   // Etapa 3 e 4
   objetivos_selecionados: z.array(
@@ -37,12 +34,6 @@ export const DiagnosticoSchema = z.object({
   reacao_queda: z.enum(["vender_tudo", "espera_preocupado", "mantenho_tranquilo", "compra_mais"]),
   experiencia_rv: z.enum(["nunca", "pouca", "media", "experiente"]),
   percentual_risco: z.enum(["ate_10", "ate_30", "ate_60", "mais_60"]),
-  
-  // Controle de Fluxo
-  ignorar_reserva: z.boolean().optional().default(false),
-}).refine((data) => data.valor_reserva <= data.patrimonio_total, {
-  message: "A reserva não pode ser maior que o patrimônio total.",
-  path: ["valor_reserva"],
 });
 
 export type DiagnosticoInput = z.infer<typeof DiagnosticoSchema>;

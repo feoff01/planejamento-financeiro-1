@@ -55,6 +55,10 @@ body {
   overflow-x: hidden;
 }
 
+.font-editorial {
+  font-family: "Editorial New", Georgia, "Times New Roman", serif;
+}
+
 .glass-panel {
   background: rgba(19, 49, 92, 0.6); /* #13315C com opacidade */
   backdrop-filter: blur(12px);

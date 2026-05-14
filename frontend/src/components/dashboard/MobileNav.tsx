@@ -5,6 +5,7 @@ import { ArrowLeft, Lock, LogOut, Menu, User, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+
 import { useAuth } from "@/hooks/useAuth";
 import { AuthService } from "@/services/auth/AuthService";
 import { navigationItems } from "./navigationItems";
@@ -43,7 +44,7 @@ export function MobileNav() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="md:hidden fixed right-4 top-4 z-50 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-blue-brand-950/85 text-zinc-100 shadow-2xl shadow-black/40 backdrop-blur-xl transition-all active:scale-95"
+        className="fixed right-4 top-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-blue-brand-950 text-white shadow-xl shadow-blue-brand-950/20 transition-all active:scale-95 md:hidden"
         aria-label="Abrir menu"
       >
         <Menu size={22} />
@@ -59,7 +60,7 @@ export function MobileNav() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="md:hidden fixed inset-0 z-50 bg-blue-brand-950/70 backdrop-blur-sm"
+              className="fixed inset-0 z-50 bg-blue-brand-950/45 backdrop-blur-sm md:hidden"
             />
 
             <motion.aside
@@ -67,29 +68,29 @@ export function MobileNav() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 260 }}
-              className="md:hidden fixed right-0 top-0 z-50 flex h-dvh w-[min(88vw,360px)] flex-col border-l border-white/10 bg-surface shadow-2xl shadow-black/60"
+              className="fixed right-0 top-0 z-50 flex h-dvh w-[min(88vw,360px)] flex-col border-l border-blue-brand-950/10 bg-[#f7f3ea] shadow-2xl shadow-blue-brand-950/20 md:hidden"
             >
-              <div className="flex items-center justify-between border-b border-white/5 px-4 py-2.5">
+              <div className="flex items-center justify-between border-b border-blue-brand-950/10 px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-gold-600">
-                    <span className="text-xs font-bold leading-none text-blue-brand-950">S</span>
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-brand-950">
+                    <span className="text-xs font-bold leading-none text-primary-400">S</span>
                   </div>
-                  <span className="text-xs font-bold tracking-tight">
-                    Synapta<span className="text-primary-500">Invest</span>
+                  <span className="text-xs font-bold tracking-tight text-blue-brand-950">
+                    Synapta<span className="text-primary-600">Invest</span>
                   </span>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-zinc-400 transition-all hover:bg-white/5 hover:text-white active:scale-95"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-blue-brand-950/50 transition-all hover:bg-blue-brand-950/10 hover:text-blue-brand-950 active:scale-95"
                   aria-label="Fechar menu"
                 >
                   <X size={18} />
                 </button>
               </div>
 
-              <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-3">
+              <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
                 {navigationItems.map((item, index) => {
                   const Icon = item.icon;
                   const isUnlocked = !item.locked;
@@ -98,14 +99,17 @@ export function MobileNav() {
                   const itemContent = (
                     <div
                       className={`
-                        flex min-h-10 items-center gap-2.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all
-                        ${isUnlocked ? "text-zinc-200 active:scale-[0.99]" : "cursor-not-allowed select-none text-zinc-600"}
-                        ${isActive ? "border-primary-500/25 bg-primary-500/10 text-primary-400" : "border-transparent bg-transparent"}
+                        flex min-h-10 items-center gap-2.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-all
+                        ${isUnlocked ? "text-blue-brand-950/70 active:scale-[0.99]" : "cursor-not-allowed select-none text-blue-brand-950/30"}
+                        ${isActive ? "border-blue-brand-950 bg-blue-brand-950 text-white" : "border-transparent bg-transparent"}
                       `}
                     >
-                      <Icon size={15} className={isActive ? "text-primary-400" : isUnlocked ? "text-zinc-400" : "text-zinc-700"} />
+                      <Icon
+                        size={15}
+                        className={isActive ? "text-primary-400" : isUnlocked ? "text-blue-brand-950/50" : "text-blue-brand-950/25"}
+                      />
                       <span className="flex-1">{item.label}</span>
-                      {item.locked && <Lock size={11} className="text-zinc-700" />}
+                      {item.locked && <Lock size={11} className="text-blue-brand-950/25" />}
                     </div>
                   );
 
@@ -128,28 +132,28 @@ export function MobileNav() {
                 })}
               </nav>
 
-              <div className="border-t border-white/5 px-3 py-3">
+              <div className="border-t border-blue-brand-950/10 px-3 py-3">
                 <Link
                   href="/"
                   onClick={() => setIsOpen(false)}
-                  className="mb-2 flex min-h-10 items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-zinc-400 transition-all hover:bg-white/5 hover:text-white"
+                  className="mb-2 flex min-h-10 items-center gap-2.5 rounded-full px-3 py-2 text-xs font-semibold text-blue-brand-950/55 transition-all hover:bg-white/60 hover:text-blue-brand-950"
                 >
                   <ArrowLeft size={14} />
                   <span>Voltar para o site</span>
                 </Link>
 
-                <div className="flex items-center justify-between rounded-xl bg-blue-brand-950/45 px-3 py-2">
+                <div className="flex items-center justify-between rounded-[1rem] bg-white/55 px-3 py-2">
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-brand-800">
-                      <User size={13} className="text-zinc-400" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-brand-950 text-primary-400">
+                      <User size={13} />
                     </div>
-                    <span className="truncate text-xs font-medium text-zinc-300">{userName}</span>
+                    <span className="truncate text-xs font-semibold text-blue-brand-950/70">{userName}</span>
                   </div>
 
                   <button
                     type="button"
                     onClick={signOut}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-zinc-500 transition-all hover:bg-red-500/10 hover:text-red-400"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-blue-brand-950/45 transition-all hover:bg-red-500/10 hover:text-red-600"
                     aria-label="Sair"
                   >
                     <LogOut size={15} />

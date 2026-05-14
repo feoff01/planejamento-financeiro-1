@@ -1,5 +1,5 @@
 import * as math from 'mathjs';
-import { MarketAssumptions, Asset, Goal, Client, EmergencyFund } from '../domain/carteiraIdealSchemas';
+import { MarketAssumptions, Asset, Goal, Client } from '../domain/carteiraIdealSchemas';
 
 // Helper Random functions
 function standardNormal(): number {
@@ -42,8 +42,8 @@ export const DEFAULT_VIEW: MarketAssumptions = {
   macro_tilts: {
     selic: -0.05,
     prefixado: -0.05,
-    ipca: 0.15,
-    equity: -0.05,
+    ipca: 0.10,
+    equity: 0.00,
   },
   selic_min: 0.05,
   equity_max: 0.85,
@@ -216,14 +216,6 @@ export function buildCatalog(view: MarketAssumptions): Record<string, Asset> {
   return catalog;
 }
 
-// ---- SECTION 5: MODELO DO CLIENTE E REGRAS ----
-export function getEmergencyFund(client: Client): EmergencyFund {
-  if (client.emergency !== null) return client.emergency;
-  const target = client.expenses * 6;
-  const inferredBalance = Math.min(client.savings, target);
-  return { months_target: 6, balance: inferredBalance, target_asset_id: 'lft_2028' };
-}
-
 export function goalToRules(goal: Goal): Record<string, any> {
   let maxEq = 0.85, floorMin = 0.20, targetP = 0.65;
   if (goal.nature === 'essential') {
@@ -251,7 +243,7 @@ export function goalToRules(goal: Goal): Record<string, any> {
   };
   const durationBand = bands[horizonClass as keyof typeof bands];
 
-  const riskEqMap: Record<string, number> = { conservative: 0.20, moderate: 0.45, aggressive: 0.70, ultra_aggressive: 0.85 };
+  const riskEqMap: Record<string, number> = { conservative: 0.25, moderate: 0.52, aggressive: 0.78, ultra_aggressive: 0.85 };
   maxEq = Math.min(maxEq, riskEqMap[goal.risk] || 0.45);
 
   let minEqFloor = 0.20;
@@ -396,6 +388,17 @@ function resolveFiSplit(years: number, rules: Record<string, any>, catalog: Reco
   return res;
 }
 
+function resolveEquitySplit(rules: Record<string, any>, risk?: string): number {
+  let divShare = 0.50;
+  if (rules.max_equity >= 0.80) divShare = 0.20;
+  else if (rules.max_equity >= 0.60) divShare = 0.35;
+  else if (rules.max_equity >= 0.35) divShare = 0.65;
+  else divShare = 1.00;
+
+  if (risk === 'conservative') divShare = Math.max(divShare, 0.80);
+  return divShare;
+}
+
 export function algoAllocation(target: number, savings: number, monthly: number, years: number, rules: Record<string, any>, view: MarketAssumptions, catalog: Record<string, Asset>) {
   let floor: any = null;
   let fp = rules.floor_min;
@@ -413,11 +416,7 @@ export function algoAllocation(target: number, savings: number, monthly: number,
   const weights: Record<string, number> = {};
   for (const k in fiMix) weights[k] = fp * fiMix[k];
 
-  let divShare = 0.50;
-  if (rules.max_equity >= 0.80) divShare = 0.20;
-  else if (rules.max_equity >= 0.60) divShare = 0.35;
-  else if (rules.max_equity >= 0.35) divShare = 0.65;
-  else divShare = 1.00;
+  const divShare = resolveEquitySplit(rules);
 
   weights['dividend_portfolio'] = up * divShare;
   weights['portfolio_z'] = up * (1 - divShare);
@@ -425,7 +424,7 @@ export function algoAllocation(target: number, savings: number, monthly: number,
   return { weights, floor };
 }
 
-export function applyManagerView(algoW: Record<string, number>, view: MarketAssumptions, catalog: Record<string, Asset>): Record<string, number> {
+export function applyManagerView(algoW: Record<string, number>, view: MarketAssumptions, catalog: Record<string, Asset>, minSelicFloor?: number): Record<string, number> {
   if (view.conviction === 0) return { ...algoW };
 
   const w = { ...algoW };
@@ -444,9 +443,10 @@ export function applyManagerView(algoW: Record<string, number>, view: MarketAssu
   }
 
   const sid = selicId(catalog);
-  if ((w[sid] || 0) < view.selic_min) {
-    const deficit = view.selic_min - (w[sid] || 0);
-    w[sid] = view.selic_min;
+  const selicFloor = Math.max(view.selic_min, minSelicFloor || 0);
+  if ((w[sid] || 0) < selicFloor) {
+    const deficit = selicFloor - (w[sid] || 0);
+    w[sid] = selicFloor;
     const others = Object.entries(w).filter(([k, v]) => k !== sid && v > 0.01);
     const ot = others.reduce((sum, [_, v]) => sum + v, 0);
     if (ot > 0) {
@@ -554,13 +554,7 @@ export function enforceMinEquityAllocation(weights: Record<string, number>, goal
     }
   }
 
-  let divShare = 1.0;
-  const maxEq = rules.max_equity || 0.5;
-  if (maxEq >= 0.80) divShare = 0.20;
-  else if (maxEq >= 0.60) divShare = 0.35;
-  else if (maxEq >= 0.35) divShare = 0.65;
-  
-  if (goal.risk === 'conservative') divShare = Math.max(divShare, 0.80);
+  const divShare = resolveEquitySplit(rules, goal.risk);
 
   const divId = 'dividend_portfolio';
   const zId = 'portfolio_z';
@@ -593,6 +587,260 @@ export function enforceMinEquityAllocation(weights: Record<string, number>, goal
   return { newW, log };
 }
 
+function applyEquityRiskBudgetBias(weights: Record<string, number>, goal: Goal, rules: Record<string, any>, view: MarketAssumptions, catalog: Record<string, Asset>) {
+  const equityIds = Object.keys(catalog).filter(k => catalog[k].cat === 'equity');
+  const selicIds = Object.keys(catalog).filter(k => catalog[k].cat === 'selic');
+  const otherRfIds = Object.keys(catalog).filter(k => ['ipca', 'prefixado'].includes(catalog[k].cat));
+
+  const eqBefore = equityIds.reduce((sum, aid) => sum + (weights[aid] || 0), 0);
+  const currentRisk = portfolioRisk(weights, view, catalog).sigma;
+  const [, maxProfileVol] = profileTargetVol(goal.risk);
+  const targetProfileVol = Math.max(maxProfileVol - 0.0001, 0);
+
+  const log = {
+    equity_before: eqBefore,
+    equity_after: eqBefore,
+    added_equity: 0.0,
+    sigma_before: currentRisk,
+    sigma_after: currentRisk,
+    skipped_reason: '',
+  };
+
+  if (currentRisk >= targetProfileVol - 1e-9) {
+    log.skipped_reason = 'risk_budget_exhausted';
+    return { newW: weights, log };
+  }
+
+  const baseIncreaseMap: Record<string, number> = {
+    conservative: 0.03,
+    moderate: 0.07,
+    aggressive: 0.08,
+    ultra_aggressive: 0.05,
+  };
+
+  let desiredIncrease = baseIncreaseMap[goal.risk] || 0.05;
+  if (goal.nature === 'essential' || goal.liquidity === 'high' || goal.years <= 3) {
+    desiredIncrease *= 0.5;
+  }
+
+  const maxEquity = Math.min(rules.max_equity || view.equity_max, view.equity_max);
+  const equityRoom = Math.max(0, maxEquity - eqBefore);
+  const otherRfTotal = otherRfIds.reduce((sum, aid) => sum + (weights[aid] || 0), 0);
+  const selicTotal = selicIds.reduce((sum, aid) => sum + (weights[aid] || 0), 0);
+  const minSelic = Math.max(rules.min_liquidity || 0.0, view.selic_min || 0.0);
+  const availableSelic = Math.max(0, selicTotal - minSelic);
+
+  const divId = 'dividend_portfolio';
+  const zId = 'portfolio_z';
+  const singleMax = view.single_max || 1.0;
+  const equityAssetRoom =
+    (catalog[divId] ? Math.max(0, singleMax - (weights[divId] || 0)) : 0) +
+    (catalog[zId] ? Math.max(0, singleMax - (weights[zId] || 0)) : 0);
+
+  const maxTransfer = Math.min(desiredIncrease, equityRoom, otherRfTotal + availableSelic, equityAssetRoom);
+  if (maxTransfer <= 1e-9) {
+    log.skipped_reason = 'no_transfer_room';
+    return { newW: weights, log };
+  }
+
+  const divShare = resolveEquitySplit(rules, goal.risk);
+
+  const buildCandidate = (amount: number): Record<string, number> => {
+    const newW = { ...weights };
+    const cutFromOther = Math.min(amount, otherRfTotal);
+    const cutFromSelic = Math.max(0, amount - cutFromOther);
+
+    if (cutFromOther > 0 && otherRfTotal > 0) {
+      for (const aid of otherRfIds) {
+        const w = newW[aid] || 0;
+        if (w <= 0) continue;
+        newW[aid] = Math.max(0, w - w * (cutFromOther / otherRfTotal));
+      }
+    }
+
+    if (cutFromSelic > 0 && selicTotal > 0) {
+      for (const aid of selicIds) {
+        const w = newW[aid] || 0;
+        if (w <= 0) continue;
+        newW[aid] = Math.max(0, w - w * (cutFromSelic / selicTotal));
+      }
+    }
+
+    let remaining = amount;
+    const addDivTarget = amount * divShare;
+    const addZTarget = amount - addDivTarget;
+    const divRoom = catalog[divId] ? Math.max(0, singleMax - (newW[divId] || 0)) : 0;
+    const zRoom = catalog[zId] ? Math.max(0, singleMax - (newW[zId] || 0)) : 0;
+
+    const addDiv = Math.min(addDivTarget, divRoom);
+    if (addDiv > 0) {
+      newW[divId] = (newW[divId] || 0) + addDiv;
+      remaining -= addDiv;
+    }
+
+    const addZ = Math.min(addZTarget, zRoom);
+    if (addZ > 0) {
+      newW[zId] = (newW[zId] || 0) + addZ;
+      remaining -= addZ;
+    }
+
+    if (remaining > 1e-9) {
+      const preferredIds = divShare >= 0.5 ? [divId, zId] : [zId, divId];
+      for (const aid of preferredIds) {
+        if (!catalog[aid]) continue;
+        const room = Math.max(0, singleMax - (newW[aid] || 0));
+        const add = Math.min(remaining, room);
+        if (add > 0) {
+          newW[aid] = (newW[aid] || 0) + add;
+          remaining -= add;
+        }
+      }
+    }
+
+    let total = 0;
+    for (const k in newW) {
+      if (newW[k] < 0) newW[k] = 0;
+      total += newW[k];
+    }
+    if (total > 0 && Math.abs(total - 1.0) > 1e-6) {
+      for (const k in newW) newW[k] /= total;
+    }
+
+    return newW;
+  };
+
+  let acceptedAmount = maxTransfer;
+  let candidate = buildCandidate(acceptedAmount);
+  let candidateRisk = portfolioRisk(candidate, view, catalog).sigma;
+
+  if (candidateRisk > targetProfileVol) {
+    let lo = 0.0;
+    let hi = maxTransfer;
+    for (let i = 0; i < 16; i++) {
+      const mid = (lo + hi) / 2;
+      const midCandidate = buildCandidate(mid);
+      const midRisk = portfolioRisk(midCandidate, view, catalog).sigma;
+      if (midRisk <= targetProfileVol) lo = mid;
+      else hi = mid;
+    }
+    acceptedAmount = lo;
+    candidate = buildCandidate(acceptedAmount);
+    candidateRisk = portfolioRisk(candidate, view, catalog).sigma;
+  }
+
+  if (acceptedAmount <= 1e-4) {
+    log.skipped_reason = 'risk_budget_too_small';
+    return { newW: weights, log };
+  }
+
+  log.added_equity = acceptedAmount;
+  log.equity_after = equityIds.reduce((sum, aid) => sum + (candidate[aid] || 0), 0);
+  log.sigma_after = candidateRisk;
+
+  return { newW: candidate, log };
+}
+
+function limitRiskToProfile(weights: Record<string, number>, goal: Goal, view: MarketAssumptions, catalog: Record<string, Asset>) {
+  const equityIds = Object.keys(catalog).filter(k => catalog[k].cat === 'equity');
+  const eqBefore = equityIds.reduce((sum, aid) => sum + (weights[aid] || 0), 0);
+  const currentRisk = portfolioRisk(weights, view, catalog).sigma;
+  const [, maxProfileVol] = profileTargetVol(goal.risk);
+  const targetProfileVol = Math.max(maxProfileVol - 0.0001, 0);
+
+  const log = {
+    equity_before: eqBefore,
+    equity_after: eqBefore,
+    sigma_before: currentRisk,
+    sigma_after: currentRisk,
+    reduced_equity: 0.0,
+    applied: false,
+  };
+
+  if (currentRisk <= targetProfileVol + 1e-9 || eqBefore <= 0) {
+    return { newW: weights, log };
+  }
+
+  const sid = selicId(catalog);
+  const buildCandidate = (reduction: number): Record<string, number> => {
+    const newW = { ...weights };
+    for (const aid of equityIds) {
+      const w = newW[aid] || 0;
+      if (w <= 0) continue;
+      newW[aid] = Math.max(0, w - w * (reduction / eqBefore));
+    }
+    newW[sid] = (newW[sid] || 0) + reduction;
+
+    let total = 0;
+    for (const k in newW) {
+      if (newW[k] < 0) newW[k] = 0;
+      total += newW[k];
+    }
+    if (total > 0 && Math.abs(total - 1.0) > 1e-6) {
+      for (const k in newW) newW[k] /= total;
+    }
+
+    return newW;
+  };
+
+  let lo = 0.0;
+  let hi = eqBefore;
+  for (let i = 0; i < 18; i++) {
+    const mid = (lo + hi) / 2;
+    const candidate = buildCandidate(mid);
+    const sigma = portfolioRisk(candidate, view, catalog).sigma;
+    if (sigma <= targetProfileVol) hi = mid;
+    else lo = mid;
+  }
+
+  const finalW = buildCandidate(hi);
+  const finalRisk = portfolioRisk(finalW, view, catalog).sigma;
+  log.applied = true;
+  log.reduced_equity = hi;
+  log.equity_after = equityIds.reduce((sum, aid) => sum + (finalW[aid] || 0), 0);
+  log.sigma_after = finalRisk;
+
+  return { newW: finalW, log };
+}
+
+function enforceSelicFloor(weights: Record<string, number>, rules: Record<string, any>, view: MarketAssumptions, catalog: Record<string, Asset>) {
+  const sid = selicId(catalog);
+  const floor = Math.max(rules.min_liquidity || 0.0, view.selic_min || 0.0);
+  const current = weights[sid] || 0;
+  if (current >= floor - 1e-9) return weights;
+
+  const newW = { ...weights };
+  const deficit = floor - current;
+  const preferredCutIds = Object.keys(catalog).filter(k => k !== sid && ['ipca', 'prefixado'].includes(catalog[k].cat) && (newW[k] || 0) > 0);
+  const fallbackCutIds = Object.keys(catalog).filter(k => k !== sid && catalog[k].cat === 'equity' && (newW[k] || 0) > 0);
+
+  let remaining = deficit;
+  for (const ids of [preferredCutIds, fallbackCutIds]) {
+    if (remaining <= 1e-9) break;
+    const total = ids.reduce((sum, aid) => sum + (newW[aid] || 0), 0);
+    const cut = Math.min(remaining, total);
+    if (cut <= 0 || total <= 0) continue;
+    for (const aid of ids) {
+      const w = newW[aid] || 0;
+      if (w <= 0) continue;
+      newW[aid] = Math.max(0, w - w * (cut / total));
+    }
+    remaining -= cut;
+  }
+
+  newW[sid] = current + deficit - Math.max(remaining, 0);
+
+  let total = 0;
+  for (const k in newW) {
+    if (newW[k] < 0) newW[k] = 0;
+    total += newW[k];
+  }
+  if (total > 0 && Math.abs(total - 1.0) > 1e-6) {
+    for (const k in newW) newW[k] /= total;
+  }
+
+  return newW;
+}
+
 export function buildPortfolio(goal: Goal | null, client: Client, view: MarketAssumptions, catalog: Record<string, Asset>, override?: Record<string, number>) {
   if (!goal) {
     goal = { name: 'Crescimento', target: 0, years: 10, risk: 'aggressive', priority: 5, nature: 'aspirational', liquidity: 'medium' };
@@ -601,16 +849,19 @@ export function buildPortfolio(goal: Goal | null, client: Client, view: MarketAs
   const rules = goalToRules(goal);
   const { weights: algoW, floor } = algoAllocation(goal.target, client.savings, client.monthly, goal.years, rules, view, catalog);
   
-  let gestorW = applyManagerView(algoW, view, catalog);
+  let gestorW = applyManagerView(algoW, view, catalog, rules.min_liquidity);
   
   const afterOvrClean = cleanW(gestorW, catalog);
-  const { newW: finalW, log: enforceLog } = enforceMinEquityAllocation(afterOvrClean, goal, rules, catalog, 0.20);
+  const { newW: minEquityW, log: enforceLog } = enforceMinEquityAllocation(afterOvrClean, goal, rules, catalog, 0.20);
+  const { newW: equityBiasedW, log: equityBiasLog } = applyEquityRiskBudgetBias(minEquityW, goal, rules, view, catalog);
+  const { newW: riskLimitedW, log: riskLimitLog } = limitRiskToProfile(equityBiasedW, goal, view, catalog);
+  const finalW = enforceSelicFloor(riskLimitedW, rules, view, catalog);
 
   return {
     alloc: cleanW(finalW, catalog),
     algo_alloc: cleanW(algoW, catalog),
     pre_enforce: afterOvrClean,
-    rules, floor, goal, enforce_log: enforceLog
+    rules, floor, goal, enforce_log: enforceLog, equity_bias_log: equityBiasLog, risk_limit_log: riskLimitLog
   };
 }
 

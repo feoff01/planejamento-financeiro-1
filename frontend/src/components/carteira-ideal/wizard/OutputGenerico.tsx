@@ -2,14 +2,11 @@
 
 import { motion } from "framer-motion";
 import {
-  AlertTriangle,
   ArrowRight,
   CalendarClock,
-  CheckCircle2,
   CircleDollarSign,
-  Droplets,
+  Lock,
   LucideIcon,
-  PieChart,
   Rocket,
   Scale,
   ShieldCheck,
@@ -17,10 +14,10 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
+
+import { ReservaDisclaimerModal } from "./ModalIntermediarioReserva";
 import { OutputEspecifico } from "./OutputEspecifico";
 import type { PlanoEspecifico } from "./OutputEspecifico";
-import { Pricing } from "@/components/Pricing";
-import { ModalIntermediarioReserva } from "./ModalIntermediarioReserva";
 
 type Perfil = "conservador" | "moderado" | "arrojado";
 
@@ -51,46 +48,11 @@ type Resultado = {
 };
 
 type OutputGenericoNarrativa = {
-  status: "base_fragil" | "base_incompleta" | "meta_critica" | "meta_apertada" | "plano_viavel" | "plano_forte";
-  fase_estrategica: "construir_reserva" | "completar_reserva" | "investir_para_objetivos";
-  tipo_plano: "reserva_emergencia" | "objetivos";
-  bloquear_carteira_objetivos: boolean;
+  status: "meta_critica" | "meta_apertada" | "plano_viavel" | "plano_forte";
   titulo: string;
   subtitulo: string;
-  prioridade_atual: string;
-  passos: Array<{
-    titulo: string;
-    descricao: string;
-    status: "agora" | "proximo" | "depois";
-  }>;
   cta_label: string;
-  mostrar_probabilidade_no_topo: boolean;
-  metricas: {
-    probabilidade: number | null;
-    reserva_atual: number;
-    reserva_ideal: number;
-    gap_reserva: number;
-    aporte_recomendado_reserva: number;
-    meses_para_completar: number | null;
-    percentual_aporte_reserva: number;
-    plano_ativos: Array<{
-      asset_id: string;
-      nome: string;
-      categoria: "selic";
-      percentual: number;
-      valor_destino: number;
-      aporte_mensal: number;
-      retorno_liquido_aa: number;
-      retorno_bruto_aa: number;
-      volatilidade_aa: number;
-      prazo_anos: number;
-      liquidez: "diaria";
-      explicacao: string;
-    }>;
-  };
 };
-
-type OutputGenericoPassoStatus = OutputGenericoNarrativa["passos"][number]["status"];
 
 type ObjetivoSelecionado = {
   id: string;
@@ -107,6 +69,8 @@ type DetalheObjetivo = {
 };
 
 type DadosCompletos = {
+  aporte_mensal?: number;
+  patrimonio_total?: number;
   objetivos_selecionados?: ObjetivoSelecionado[];
   detalhes_objetivos?: Record<string, DetalheObjetivo>;
 };
@@ -115,17 +79,17 @@ type ObjetivoResumo = ObjetivoSelecionado & {
   detalhes?: DetalheObjetivo;
 };
 
-type Motivo = {
-  title: string;
-  desc: string;
-  icon: LucideIcon;
-  tone: string;
+type GargaloPrincipal = {
+  titulo: string;
+  descricao: string;
+  destaqueLabel: string;
+  destaqueValor: string;
+  tone: "amber" | "primary" | "emerald";
 };
 
 type Props = {
   resultado: Resultado;
   dadosCompletos: DadosCompletos;
-  onIgnorarReserva?: () => void;
 };
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
@@ -133,25 +97,20 @@ const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
 });
 
-export function OutputGenerico({ resultado, dadosCompletos, onIgnorarReserva }: Props) {
+export function OutputGenerico({ resultado, dadosCompletos }: Props) {
   const [showDetalhado, setShowDetalhado] = useState(false);
-  const [hasChosenPath, setHasChosenPath] = useState(false);
+  const [showReservaDisclaimer, setShowReservaDisclaimer] = useState(true);
 
   const config = PERFIL_CONFIG[resultado.perfil];
   const narrativa = resultado.output_generico;
-  const isReservaPlan = narrativa?.tipo_plano === "reserva_emergencia";
-
   const probMeta = resultado.motor.simulation.prob_meta;
   const objetivos = buildObjetivosResumo(dadosCompletos);
-  const motivos = buildMotivos(resultado, objetivos);
+  const gargaloPrincipal = buildGargaloPrincipal(resultado, objetivos, dadosCompletos);
 
-  const planoCompleto = {
-    tipo_plano: narrativa?.tipo_plano ?? "objetivos",
-    reserva: narrativa?.metricas,
+  const planoCompleto: PlanoEspecifico = {
     cta_label: narrativa?.cta_label,
     objetivos_registrados: objetivos,
     portfolio: resultado.motor.portfolio,
-    rules_applied: resultado.motor.rules_applied,
     risk: resultado.motor.risk,
     simulation: resultado.motor.simulation,
     analysis: resultado.motor.analysis,
@@ -161,24 +120,8 @@ export function OutputGenerico({ resultado, dadosCompletos, onIgnorarReserva }: 
     return <OutputEspecifico plano={planoCompleto} onBack={() => setShowDetalhado(false)} />;
   }
 
-  if (isReservaPlan && !hasChosenPath) {
-    return (
-      <ModalIntermediarioReserva
-        onTracarReserva={() => setHasChosenPath(true)}
-        onPularReserva={() => {
-          if (onIgnorarReserva) onIgnorarReserva();
-        }}
-      />
-    );
-  }
-
-  if (isReservaPlan && narrativa) {
-    return (
-      <ReservaGenerico
-        narrativa={narrativa}
-        objetivos={objetivos}
-      />
-    );
+  if (showReservaDisclaimer) {
+    return <ReservaDisclaimerModal onContinue={() => setShowReservaDisclaimer(false)} />;
   }
 
   return (
@@ -186,378 +129,122 @@ export function OutputGenerico({ resultado, dadosCompletos, onIgnorarReserva }: 
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="mx-auto w-full max-w-5xl space-y-5 pb-8"
+      className="mx-auto w-full max-w-6xl space-y-6 pb-8"
     >
-      <header className="space-y-2 text-center">
-        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-primary-500/80">
-          Resultado do seu diagnóstico
-        </p>
-        <h2 className="text-3xl font-black leading-tight text-primary-500 sm:text-4xl">
-          {narrativa?.titulo ?? "Sua estratégia personalizada está pronta"}
-        </h2>
-        <p className="mx-auto max-w-xl text-sm leading-relaxed text-zinc-400">
-          {narrativa?.subtitulo ?? "Com base nos seus objetivos, prazo e perfil, montamos uma visão simples para guiar seu próximo passo."}
-        </p>
-      </header>
-
-      <section className="overflow-hidden rounded-3xl border border-border/70 bg-surface/80 shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
-        <div className={`px-5 py-7 text-center sm:px-8 sm:py-9 ${config.profileBg}`}>
-          <div className={`mx-auto flex h-24 w-24 items-center justify-center rounded-full border ${config.ring} ${config.bg} ${config.shadow}`}>
-            <config.icon size={44} className={config.color} />
-          </div>
-          <p className="mt-5 text-[11px] font-bold uppercase tracking-[0.28em] text-zinc-500">Perfil do investidor</p>
-          <h3 className={`mt-2 text-4xl font-black ${config.color}`}>{config.label}</h3>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">{config.desc}</p>
-
-          {(!narrativa || narrativa.mostrar_probabilidade_no_topo) ? (
-            <div className="mx-auto mt-6 flex max-w-2xl flex-col items-center justify-center gap-3 rounded-2xl border border-border/50 bg-zinc-950/35 px-4 py-4 sm:flex-row sm:px-5">
-              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${getProbabilityIconTone(probMeta)}`}>
-                <Target size={22} />
-              </div>
-              <div className="text-center sm:text-left">
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-500">Probabilidade simulada</p>
-                <p className="text-xs leading-relaxed text-zinc-400">
-                  {probMeta === null
-                    ? "A estratégia foi montada mesmo sem uma meta numérica para simular."
-                    : "Chance estimada de atingir sua meta dentro do prazo informado."}
-                </p>
-              </div>
-              <p className={`text-3xl font-black sm:ml-auto ${getProbabilityTextTone(probMeta)}`}>{formatProbability(probMeta)}</p>
-            </div>
-          ) : (
-            <div className="mx-auto mt-6 flex max-w-2xl flex-col items-center justify-center gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-4 sm:flex-row sm:px-5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-400">
-                <Target size={22} />
-              </div>
-              <div className="text-center sm:text-left">
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-400/80">Prioridade atual</p>
-                <p className="text-sm font-black text-zinc-100">{narrativa.prioridade_atual}</p>
-                <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-                  A probabilidade técnica continua no plano detalhado, mas agora o foco é seguir a fase certa.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-6 border-t border-border/50 p-5 sm:p-8">
-          {narrativa && !narrativa.mostrar_probabilidade_no_topo && <PlanoFasesSection narrativa={narrativa} />}
-          <ObjetivosSection objetivos={objetivos} />
-          <AlocacaoSection alocacao={resultado.alocacao} />
-          <MotivosSection motivos={motivos} />
-
-          <div className="flex items-start gap-3 rounded-2xl border border-primary-500/25 bg-primary-500/10 p-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-500/15 text-primary-500">
-              <CheckCircle2 size={22} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-primary-300">
-                {narrativa ? `Próxima ação: ${narrativa.prioridade_atual}` : "Estratégia compatível com seu objetivo"}
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-                Ela já está pronta para ser acompanhada no dashboard e pode ser aberta em detalhes no próximo passo.
-              </p>
-            </div>
-          </div>
-
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setShowDetalhado(true)}
-            className="flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-primary-500 to-orange-500 px-5 py-4 text-sm font-black text-black shadow-[0_18px_50px_rgba(245,158,11,0.24)] transition-all hover:from-primary-400 hover:to-orange-400"
-          >
-            <TrendingUp size={18} />
-            <span>{narrativa?.cta_label ?? "Ver plano detalhado"}</span>
-            <ArrowRight size={18} />
-          </motion.button>
-        </div>
-      </section>
-    </motion.div>
-  );
-}
-
-function ReservaGenerico({
-  narrativa,
-  objetivos,
-}: {
-  narrativa: OutputGenericoNarrativa;
-  objetivos: ObjetivoResumo[];
-}) {
-  const metricas = narrativa.metricas;
-  const reservaProgress = getReservaProgress(metricas.reserva_atual, metricas.reserva_ideal);
-  const ativo = metricas.plano_ativos?.[0];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="mx-auto w-full max-w-5xl pb-8"
-    >
-      {false && (
-      <header className="space-y-2 text-center">
-        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-primary-500/80">
-          Resultado do seu diagnóstico
-        </p>
-        <h2 className="text-3xl font-black leading-tight text-primary-500 sm:text-4xl">
-          {narrativa.titulo}
-        </h2>
-        <p className="mx-auto max-w-2xl text-sm leading-relaxed text-zinc-400">
-          {narrativa.subtitulo}
-        </p>
-      </header>
-      )}
-
-      <section className="space-y-6">
-        <div className="rounded-3xl border border-amber-500/15 bg-gradient-to-b from-amber-500/10 via-zinc-950/35 to-zinc-950/20 px-5 py-7 text-center sm:px-8 sm:py-9">
-          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border border-amber-500/35 bg-amber-500/10 shadow-[0_0_42px_rgba(245,158,11,0.18)]">
-            <ShieldCheck size={44} className="text-amber-400" />
-          </div>
-          <p className="mt-5 text-[11px] font-bold uppercase tracking-[0.28em] text-zinc-500">Fase estratégica</p>
-          <h3 className="mt-2 text-3xl font-black text-amber-300 sm:text-4xl">{narrativa.prioridade_atual}</h3>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">
-            A carteira de objetivos fica em espera por enquanto. Seus sonhos foram registrados, mas a base precisa estar pronta antes de qualquer alocação para crescimento.
+      <header className="grid gap-7 lg:grid-cols-[1fr_0.7fr] lg:items-end">
+        <div>
+          <p className="mb-5 text-xs font-semibold uppercase tracking-[0.28em] text-primary-700">
+            Resultado do diagnóstico
           </p>
-
-          <div className="mx-auto mt-6 flex max-w-2xl flex-col items-center justify-center gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-4 sm:flex-row sm:px-5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-400">
-              <Target size={22} />
-            </div>
-            <div className="text-center sm:text-left">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-400/80">Prioridade atual</p>
-              <p className="text-sm font-black text-zinc-100">
-                Faltam {formatCurrency(metricas.gap_reserva)} para completar sua reserva.
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-                O plano completo mostra exatamente onde investir essa reserva com liquidez e baixo risco.
-              </p>
-            </div>
-          </div>
+          <h2 className="font-editorial text-5xl leading-[0.92] text-blue-brand-950 md:text-7xl">
+            {narrativa?.titulo ?? "Sua estratégia personalizada está pronta."}
+          </h2>
         </div>
+        <p className="text-sm leading-relaxed text-blue-brand-950/60 md:text-base">
+          {narrativa?.subtitulo ??
+            "Com base nos seus objetivos, prazo e perfil, montamos uma visão simples para guiar seu próximo passo."}
+        </p>
+      </header>
 
-        <div className="space-y-6">
-          <section className="space-y-4">
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-              <ReservaMetricCard
-                icon={CircleDollarSign}
-                label="Reserva atual"
-                value={formatCurrency(metricas.reserva_atual)}
-                tone="blue"
-              />
-              <ReservaMetricCard
-                icon={ShieldCheck}
-                label="Reserva ideal"
-                value={formatCurrency(metricas.reserva_ideal)}
-                tone="green"
-              />
-              <ReservaMetricCard
-                icon={TrendingUp}
-                label="Aporte para reserva"
-                value={formatCurrency(metricas.aporte_recomendado_reserva)}
-                tone="amber"
-              />
+      <section className="overflow-hidden rounded-[1.5rem] bg-blue-brand-950 text-white shadow-[0_24px_80px_rgba(11,37,69,0.18)]">
+        <div className="grid lg:grid-cols-[0.88fr_1.12fr]">
+          <div className="border-b border-white/10 p-6 sm:p-8 lg:border-b-0 lg:border-r">
+            <div className={`mb-8 flex h-20 w-20 items-center justify-center rounded-full ${config.iconBg}`}>
+              <config.icon size={36} className={config.iconColor} />
             </div>
 
-            <div className="rounded-2xl border border-border/45 bg-zinc-950/45 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Progresso da reserva</p>
-                <p className="text-xs font-black text-emerald-300">{reservaProgress}%</p>
-              </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-800">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${reservaProgress}%` }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                  className="h-full rounded-full bg-gradient-to-r from-blue-500 via-emerald-500 to-amber-400"
-                />
-              </div>
-              <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-                Você já tem {formatCurrency(metricas.reserva_atual)} de {formatCurrency(metricas.reserva_ideal)} recomendados para sua base.
-              </p>
-            </div>
-          </section>
-
-          <PlanoFasesSection narrativa={narrativa} showGapAlert={false} />
-
-          <section className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Droplets size={18} className="text-amber-400" />
-              <h3 className="text-sm font-bold text-white">Estratégia por cima</h3>
-            </div>
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-              <ReservaStrategyItem title={`${metricas.percentual_aporte_reserva}% dos aportes`} desc="Enquanto a reserva não estiver pronta, nenhum aporte vai para objetivos." />
-              <ReservaStrategyItem title="Liquidez diária" desc="A reserva precisa estar acessível para imprevistos, sem depender do timing do mercado." />
-              <ReservaStrategyItem title="Baixo risco" desc="O foco dessa fase é preservar a base, não buscar retorno máximo." />
-            </div>
-          </section>
-
-          {ativo && (
-            <div className="rounded-3xl border border-amber-500/25 bg-amber-500/10 p-6 shadow-[0_18px_60px_rgba(245,158,11,0.08)]">
-              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Droplets size={18} className="text-amber-400" />
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-white">Invista exatamente aqui</h3>
-                  </div>
-                  <p className="mt-2 text-3xl font-black leading-tight text-amber-200">{ativo.nome}</p>
-                </div>
-                <span className="w-fit rounded-2xl border border-amber-500/30 bg-amber-500/15 px-4 py-2 text-xs font-black text-amber-200">
-                  {ativo.percentual}% dos aportes da reserva
-                </span>
-              </div>
-
-              <p className="max-w-3xl text-sm leading-relaxed text-zinc-300">{ativo.explicacao}</p>
-
-              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <ReservaAssetStat label="Valor de destino" value={formatCurrency(ativo.valor_destino)} />
-                <ReservaAssetStat label="Aporte nesse ativo" value={formatCurrency(ativo.aporte_mensal)} />
-                <ReservaAssetStat label="Retorno líquido a.a." value={formatPercent(ativo.retorno_liquido_aa)} />
-                <ReservaAssetStat label="Liquidez" value="Diária" />
-                <ReservaAssetStat label="Volatilidade a.a." value={formatPercent(ativo.volatilidade_aa)} />
-                <ReservaAssetStat label="Prazo do título" value={formatPrazoAnos(ativo.prazo_anos)} />
-              </div>
-            </div>
-          )}
-
-          <ObjetivosSection objetivos={objetivos} bloqueados />
-
-          <div className="flex items-start gap-3 rounded-2xl border border-primary-500/25 bg-primary-500/10 p-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-500/15 text-primary-500">
-              <CheckCircle2 size={22} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-primary-300">Objetivos salvos para a próxima fase</p>
-              <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-                Quando sua reserva chegar a 6 meses de gastos, recalculamos a carteira usando os objetivos que você já informou.
-              </p>
-            </div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-white/40">Perfil do investidor</p>
+            <h3 className="mt-3 font-editorial text-6xl leading-none">{config.label}</h3>
+            <p className="mt-5 text-sm leading-relaxed text-white/60">{config.desc}</p>
           </div>
 
-          <div className="mt-12 rounded-3xl border border-border/40 bg-zinc-950/40 p-1 md:p-8">
-            <div className="mb-4 text-center">
-              <h2 className="text-2xl font-black text-white">A reserva é grátis. Seu futuro é Pro.</h2>
-              <p className="text-zinc-400 text-sm mt-2">Você já tem o que precisa para a reserva. Para todo o resto, a Synapta te ajuda.</p>
-            </div>
-            <Pricing showFree={false} compact />
+          <div className="grid gap-0 sm:grid-cols-2">
+            <MetricPanel
+              label="Chance de sucesso"
+              value={formatProbability(probMeta)}
+              description={
+                probMeta === null
+                  ? "A estratégia foi montada mesmo sem uma meta numérica para simular."
+                  : "Probabilidade em cenários simulados para atingir a meta no prazo informado."
+              }
+              valueClass={getProbabilityTextTone(probMeta)}
+            />
+            <MetricPanel
+              label="Aporte mensal"
+              value={formatCurrency(dadosCompletos.aporte_mensal)}
+              description="Valor usado como base para projetar a evolução da rota."
+              valueClass="text-primary-300"
+            />
+            <MetricPanel
+              label="Patrimônio atual"
+              value={formatCurrency(dadosCompletos.patrimonio_total)}
+              description="Ponto de partida informado no diagnóstico."
+              valueClass="text-white"
+            />
+            <MetricPanel
+              label="Objetivos"
+              value={`${objetivos.length}`}
+              description="Metas consideradas na primeira leitura do plano."
+              valueClass="text-white"
+            />
           </div>
         </div>
       </section>
+
+      <div className="grid gap-5 lg:grid-cols-[1fr_0.78fr]">
+        <div className="space-y-5">
+          <ObjetivosSection objetivos={objetivos} />
+          {gargaloPrincipal && <GargaloPrincipalSection gargalo={gargaloPrincipal} />}
+        </div>
+
+        <div className="space-y-5">
+          <AlocacaoSection alocacao={resultado.alocacao} />
+          <PlanoCompletoTeaser
+            ctaLabel={narrativa?.cta_label ?? "Ver carteira ideal completa"}
+            onOpen={() => setShowDetalhado(true)}
+          />
+        </div>
+      </div>
     </motion.div>
   );
 }
 
-type ReservaMetricTone = "blue" | "green" | "amber";
-
-const RESERVA_METRIC_TONES: Record<ReservaMetricTone, { card: string; icon: string; value: string }> = {
-  blue: {
-    card: "border-blue-500/20 bg-blue-500/10",
-    icon: "bg-blue-500/10 text-blue-300",
-    value: "text-blue-100",
-  },
-  green: {
-    card: "border-emerald-500/20 bg-emerald-500/10",
-    icon: "bg-emerald-500/10 text-emerald-300",
-    value: "text-emerald-100",
-  },
-  amber: {
-    card: "border-amber-500/20 bg-amber-500/10",
-    icon: "bg-amber-500/10 text-amber-300",
-    value: "text-amber-100",
-  },
-};
-
-function ReservaMetricCard({
-  icon: Icon,
+function MetricPanel({
   label,
   value,
-  tone,
+  description,
+  valueClass,
 }: {
-  icon: LucideIcon;
   label: string;
   value: string;
-  tone: ReservaMetricTone;
+  description: string;
+  valueClass: string;
 }) {
-  const colors = RESERVA_METRIC_TONES[tone];
-
   return (
-    <div className={`rounded-2xl border p-4 ${colors.card}`}>
-      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-        <span className={`flex h-6 w-6 items-center justify-center rounded-full ${colors.icon}`}>
-          <Icon size={13} />
-        </span>
-        <span className="text-zinc-400">{label}</span>
-      </div>
-      <p className={`mt-2 text-lg font-black leading-tight ${colors.value}`}>{value}</p>
+    <div className="border-b border-white/10 p-6 last:border-b-0 sm:border-r sm:even:border-r-0 sm:[&:nth-last-child(-n+2)]:border-b-0">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/35">{label}</p>
+      <p className={`mt-3 font-editorial text-5xl leading-none ${valueClass}`}>{value}</p>
+      <p className="mt-4 text-xs leading-relaxed text-white/50">{description}</p>
     </div>
   );
 }
 
-function ReservaStrategyItem({ title, desc }: { title: string; desc: string }) {
+function ObjetivosSection({ objetivos }: { objetivos: ObjetivoResumo[] }) {
   return (
-    <article className="rounded-2xl border border-border/45 bg-zinc-950/45 p-4">
-      <p className="text-sm font-black leading-tight text-zinc-100">{title}</p>
-      <p className="mt-2 text-xs leading-relaxed text-zinc-500">{desc}</p>
-    </article>
-  );
-}
-
-function PlanoFasesSection({
-  narrativa,
-  showGapAlert = true,
-}: {
-  narrativa: OutputGenericoNarrativa;
-  showGapAlert?: boolean;
-}) {
-  return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Target size={18} className="text-amber-400" />
-        <h3 className="text-sm font-bold text-white">Sua rota em fases</h3>
-      </div>
-
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-        {narrativa.passos.map((passo, index) => (
-          <article key={`${passo.titulo}-${index}`} className="rounded-2xl border border-border/45 bg-zinc-950/45 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${getPassoTone(passo.status)}`}>
-                {formatPassoStatus(passo.status)}
-              </span>
-              <span className="text-xs font-black text-zinc-600">{index + 1}</span>
-            </div>
-            <p className="mt-4 text-sm font-black leading-tight text-zinc-100">{passo.titulo}</p>
-            <p className="mt-2 text-xs leading-relaxed text-zinc-500">{passo.descricao}</p>
-          </article>
-        ))}
-      </div>
-
-      {showGapAlert && narrativa.metricas.gap_reserva > 0 && (
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs leading-relaxed text-zinc-400">
-          Para completar a reserva recomendada, faltam aproximadamente{" "}
-          <strong className="text-amber-300">{formatCurrency(narrativa.metricas.gap_reserva)}</strong>.
-        </div>
-      )}
-    </section>
-  );
-}
-
-function ObjetivosSection({ objetivos, bloqueados = false }: { objetivos: ObjetivoResumo[]; bloqueados?: boolean }) {
-  return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Target size={18} className="text-primary-500" />
-        <h3 className="text-sm font-bold text-white">
-          {bloqueados ? "Objetivos registrados para a próxima fase" : "Seus objetivos considerados"}
-        </h3>
+    <section className="rounded-[1.5rem] border border-blue-brand-950/10 bg-white/55 p-5 sm:p-6">
+      <div className="mb-5 flex items-center gap-2">
+        <Target size={18} className="text-primary-700" />
+        <h3 className="text-sm font-bold text-blue-brand-950">Objetivos considerados</h3>
       </div>
 
       {objetivos.length === 0 ? (
-        <div className="rounded-2xl border border-border/50 bg-zinc-900/50 p-4 text-sm text-zinc-400">
+        <div className="rounded-2xl border border-blue-brand-950/10 bg-[#f7f3ea]/70 p-4 text-sm text-blue-brand-950/55">
           Nenhum objetivo foi encontrado para este diagnóstico.
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="divide-y divide-blue-brand-950/10 border-y border-blue-brand-950/10">
           {objetivos.map((objetivo) => (
-            <ObjetivoCard key={objetivo.id} objetivo={objetivo} bloqueado={bloqueados} />
+            <ObjetivoRow key={objetivo.id} objetivo={objetivo} />
           ))}
         </div>
       )}
@@ -565,34 +252,28 @@ function ObjetivosSection({ objetivos, bloqueados = false }: { objetivos: Objeti
   );
 }
 
-function ObjetivoCard({ objetivo, bloqueado = false }: { objetivo: ObjetivoResumo; bloqueado?: boolean }) {
+function ObjetivoRow({ objetivo }: { objetivo: ObjetivoResumo }) {
   const detalhes = objetivo.detalhes;
 
   return (
-    <article className="rounded-2xl border border-border/50 bg-zinc-950/35 p-4 sm:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <article className="py-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="text-lg font-black leading-tight text-white">{objetivo.label}</p>
-          {!detalhes && <p className="mt-1 text-xs text-zinc-500">Detalhes não informados.</p>}
+          <p className="font-editorial text-3xl leading-none text-blue-brand-950">{objetivo.label}</p>
+          {!detalhes && <p className="mt-1 text-xs text-blue-brand-950/40">Detalhes não informados.</p>}
         </div>
-        <span className="w-fit rounded-full border border-primary-500/20 bg-primary-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-primary-400">
-          {bloqueado ? "Após reserva" : `Prioridade ${detalhes?.prioridade ?? "-"}`}
+        <span className="w-fit rounded-full border border-blue-brand-950/10 bg-[#f7f3ea]/100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-brand-950/55">
+          Prioridade {detalhes?.prioridade ?? "-"}
         </span>
       </div>
 
       {detalhes && (
-        <div className="mt-4 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 xl:grid-cols-4">
           <InfoPill icon={CircleDollarSign} label="Valor alvo" value={formatCurrency(detalhes.valor)} />
           <InfoPill icon={CalendarClock} label="Prazo" value={formatPrazo(detalhes.horizonte_anos)} />
           <InfoPill icon={ShieldCheck} label="Tipo" value={formatNatureza(detalhes.natureza)} />
-          <InfoPill icon={Droplets} label="Liquidez" value={formatLiquidez(detalhes.liquidez)} />
+          <InfoPill icon={Target} label="Liquidez" value={formatLiquidez(detalhes.liquidez)} />
         </div>
-      )}
-
-      {bloqueado && (
-        <p className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-zinc-400">
-          Este objetivo fica salvo. A carteira dele será calculada quando sua reserva estiver completa.
-        </p>
       )}
     </article>
   );
@@ -600,80 +281,142 @@ function ObjetivoCard({ objetivo, bloqueado = false }: { objetivo: ObjetivoResum
 
 function InfoPill({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
-    <div className="min-h-11 rounded-xl border border-border/40 bg-surface-light/40 px-3 py-2">
-      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+    <div className="min-h-11 rounded-2xl border border-blue-brand-950/10 bg-[#f7f3ea]/70 px-3 py-2">
+      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-brand-950/40">
         <Icon size={12} />
         <span>{label}</span>
       </div>
-      <p className="mt-1 whitespace-normal font-bold leading-snug text-zinc-200">{value}</p>
+      <p className="mt-1 font-bold leading-snug text-blue-brand-950/78">{value}</p>
     </div>
+  );
+}
+
+const GARGALO_TONES: Record<GargaloPrincipal["tone"], { card: string; dot: string; value: string }> = {
+  amber: {
+    card: "border-primary-500/30 bg-primary-500/10",
+    dot: "bg-primary-500",
+    value: "text-primary-700",
+  },
+  primary: {
+    card: "border-blue-brand-950/20 bg-blue-brand-950/10",
+    dot: "bg-blue-brand-950",
+    value: "text-blue-brand-950",
+  },
+  emerald: {
+    card: "border-emerald-500/25 bg-emerald-500/10",
+    dot: "bg-emerald-500",
+    value: "text-emerald-700",
+  },
+};
+
+function GargaloPrincipalSection({ gargalo }: { gargalo: GargaloPrincipal }) {
+  const tone = GARGALO_TONES[gargalo.tone];
+
+  return (
+    <section className={`rounded-[1.5rem] border p-5 sm:p-6 ${tone.card}`}>
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+        <div className="min-w-0 flex-1">
+          <div className="mb-2 flex items-center gap-2">
+            <span className={`h-2 w-2 rounded-full ${tone.dot}`} />
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-brand-950/40">Gargalo principal</p>
+          </div>
+          <h3 className="font-editorial text-4xl leading-none text-blue-brand-950">{gargalo.titulo}</h3>
+          <p className="mt-3 text-sm leading-relaxed text-blue-brand-950/60">{gargalo.descricao}</p>
+        </div>
+        <div className="border-t border-blue-brand-950/10 pt-4 sm:min-w-40 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0 sm:text-right">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-brand-950/40">{gargalo.destaqueLabel}</p>
+          <p className={`mt-1 text-lg font-black leading-tight ${tone.value}`}>{gargalo.destaqueValor}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PlanoCompletoTeaser({ ctaLabel, onOpen }: { ctaLabel: string; onOpen: () => void }) {
+  return (
+    <section className="rounded-[1.5rem] bg-blue-brand-950 p-5 text-white sm:p-6">
+      <h3 className="font-editorial text-4xl leading-none">Carteira ideal completa</h3>
+      <p className="mt-4 text-sm leading-relaxed text-white/55">
+        Desbloqueie percentuais, ativos recomendados, justificativas, risco e pontos de ajuste.
+      </p>
+
+      <motion.button
+        whileTap={{ scale: 0.98 }}
+        onClick={onOpen}
+        className="mt-6 flex min-h-12 w-full items-center justify-center gap-3 rounded-full bg-primary-400 px-5 py-4 text-sm font-semibold text-blue-brand-950 transition-colors hover:bg-primary-500"
+      >
+        <TrendingUp size={18} />
+        <span>{ctaLabel}</span>
+        <ArrowRight size={18} />
+      </motion.button>
+    </section>
   );
 }
 
 function AlocacaoSection({ alocacao }: { alocacao: Resultado["alocacao"] }) {
   return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2">
-        <PieChart size={18} className="text-primary-500" />
-        <h3 className="text-sm font-bold text-white">Resumo da estratégia</h3>
+    <section className="rounded-[1.5rem] border border-blue-brand-950/10 bg-white/55 p-5 sm:p-6">
+      <div className="mb-5 flex items-center gap-2">
+        <span className="h-2 w-2 rounded-full bg-primary-500" />
+        <h3 className="text-sm font-bold text-blue-brand-950">Resumo da estratégia</h3>
       </div>
 
-      <div className="overflow-hidden rounded-full bg-zinc-800">
-        <div className="flex h-4 w-full">
-          {ALOCACAO_ITEMS.map((item) => {
-            const value = alocacao[item.key];
-            if (value <= 0) return null;
-
-            return (
-              <motion.div
-                key={item.key}
-                initial={{ width: 0 }}
-                animate={{ width: `${value}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className={item.barColor}
-              />
-            );
-          })}
+      <div className="overflow-hidden rounded-full bg-blue-brand-950/10">
+        <div className="flex h-3 w-full">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${alocacao.renda_fixa}%` }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="bg-blue-brand-950"
+          />
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${alocacao.acoes}%` }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.08 }}
+            className="bg-primary-500"
+          />
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${alocacao.liquidez}%` }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.16 }}
+            className="bg-blue-brand-950/35"
+          />
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        {ALOCACAO_ITEMS.map((item) => (
-          <div key={item.key} className="rounded-2xl border border-border/40 bg-zinc-950/45 p-3">
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-              <span className={`h-2 w-2 rounded-full ${item.dotColor}`} />
-              <span className="truncate">{item.label}</span>
-            </div>
-            <p className={`mt-2 text-xl font-black ${item.textColor}`}>{alocacao[item.key]}%</p>
-          </div>
-        ))}
+      <div className="mt-4 grid grid-cols-1 gap-2">
+        <AllocationTeaserCard label="Renda fixa" value={`${alocacao.renda_fixa}%`} />
+        <AllocationTeaserCard label="Renda variável" value={`${alocacao.acoes}%`} locked />
+        <AllocationTeaserCard label="Liquidez" value={`${alocacao.liquidez}%`} locked />
       </div>
     </section>
   );
 }
 
-function MotivosSection({ motivos }: { motivos: Motivo[] }) {
-  return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2">
-        <CheckCircle2 size={18} className="text-primary-500" />
-        <h3 className="text-sm font-bold text-white">Por que essa estratégia faz sentido para você</h3>
-      </div>
+function AllocationTeaserCard({ label, value, locked = false }: { label: string; value?: string; locked?: boolean }) {
+  const displayValue = value ?? "--%";
 
-      <div className="grid grid-cols-1 gap-2">
-        {motivos.map((motivo) => (
-          <div key={motivo.title} className="flex items-start gap-3 rounded-2xl border border-border/45 bg-zinc-950/45 p-3">
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${motivo.tone}`}>
-              <motivo.icon size={18} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-zinc-100">{motivo.title}</p>
-              <p className="mt-1 text-xs leading-relaxed text-zinc-500">{motivo.desc}</p>
-            </div>
-          </div>
-        ))}
+  return (
+    <div className="rounded-2xl border border-blue-brand-950/10 bg-[#f7f3ea]/70 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-brand-950/40">{label}</p>
+        {locked && (
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-brand-950/10 text-blue-brand-950/45">
+            <Lock size={13} />
+          </span>
+        )}
       </div>
-    </section>
+      {locked ? (
+        <p className="mt-2 font-editorial text-4xl leading-none text-blue-brand-950/78" aria-label="Percentual disponível no plano completo">
+          <span className="select-none blur-sm" aria-hidden="true">
+            {displayValue.replace("%", "")}
+          </span>
+          <span aria-hidden="true">%</span>
+        </p>
+      ) : (
+        <p className="mt-2 font-editorial text-4xl leading-none text-blue-brand-950">{displayValue}</p>
+      )}
+    </div>
   );
 }
 
@@ -684,52 +427,55 @@ function buildObjetivosResumo(dados: DadosCompletos): ObjetivoResumo[] {
   }));
 }
 
-function buildMotivos(resultado: Resultado, objetivos: ObjetivoResumo[]): Motivo[] {
-  const perfilConfig = PERFIL_CONFIG[resultado.perfil];
-  const principalClasse = getPrincipalClasse(resultado.alocacao);
-  const objetivoPrincipal = getObjetivoPrincipal(objetivos);
+function buildGargaloPrincipal(
+  resultado: Resultado,
+  objetivos: ObjetivoResumo[],
+  dados: DadosCompletos
+): GargaloPrincipal | null {
   const probMeta = resultado.motor.simulation.prob_meta;
-  const motivos: Motivo[] = [
-    {
-      title: perfilConfig.reasonTitle,
-      desc: perfilConfig.reasonDesc,
-      icon: perfilConfig.icon,
-      tone: perfilConfig.reasonTone,
-    },
-    {
-      title: `Foco principal em ${principalClasse.label.toLowerCase()}`,
-      desc: `A maior parte da estratégia ficou em ${principalClasse.label.toLowerCase()}, alinhada ao seu perfil e ao prazo informado.`,
-      icon: principalClasse.icon,
-      tone: principalClasse.tone,
-    },
-  ];
+  const objetivoPrincipal = getObjetivoPrincipal(objetivos);
+  const detalhes = objetivoPrincipal?.detalhes;
 
-  if (objetivoPrincipal) {
-    motivos.push({
-      title: `Objetivo prioritário: ${objetivoPrincipal.label}`,
-      desc: buildObjetivoReason(objetivoPrincipal),
-      icon: Target,
-      tone: "bg-primary-500/10 text-primary-400",
-    });
+  if (!detalhes || probMeta === null) return null;
+
+  const meta = detalhes.valor ?? 0;
+  const prazo = detalhes.horizonte_anos ?? 0;
+  const aporte = dados.aporte_mensal ?? 0;
+  const mediana = resultado.motor.simulation.median ?? 0;
+  const gapEstimado = Math.max(meta - mediana, 0);
+  const aporteExtraMensal = prazo > 0 ? gapEstimado / Math.max(prazo * 12, 1) : gapEstimado;
+
+  if (probMeta >= 0.8) return null;
+
+  if (prazo > 0 && prazo <= 5) {
+    return {
+      titulo: "O prazo é o principal gargalo",
+      descricao: `A meta de ${formatCurrency(meta)} em ${formatPrazo(prazo).toLowerCase()} fica apertada para a rota calculada. O plano completo mostra o impacto de alongar prazo, elevar aporte ou ajustar o alvo.`,
+      destaqueLabel: "Prazo informado",
+      destaqueValor: formatPrazo(prazo),
+      tone: "amber",
+    };
   }
 
-  if (resultado.alertas.length > 0) {
-    motivos.push({
-      title: "Ponto de atenção considerado",
-      desc: resultado.alertas[0],
-      icon: AlertTriangle,
-      tone: "bg-amber-500/10 text-amber-400",
-    });
-  } else if (probMeta !== null) {
-    motivos.push({
-      title: "Simulação coerente com a meta",
-      desc: `A estimativa indica ${formatProbability(probMeta)} de chance de chegar ao objetivo no prazo informado.`,
-      icon: CheckCircle2,
-      tone: "bg-emerald-500/10 text-emerald-400",
-    });
+  if (aporte <= 0 || aporteExtraMensal > Math.max(aporte * 0.25, 1)) {
+    return {
+      titulo: "O aporte atual está abaixo do necessário",
+      descricao: `A simulação mediana fica em ${formatCurrency(mediana)}, deixando um gap estimado de ${formatCurrency(gapEstimado)} para a meta.`,
+      destaqueLabel: "Aporte atual",
+      destaqueValor: formatCurrency(aporte),
+      tone: "amber",
+    };
   }
 
-  return motivos.slice(0, 4);
+  if (probMeta >= 0.6 && resultado.alertas.length === 0) return null;
+
+  return {
+    titulo: "A meta está alta para a rota calculada",
+    descricao: `A carteira respeita seu perfil de risco, mas a distância até ${formatCurrency(meta)} ainda exige ajustes no alvo, prazo ou aporte.`,
+    destaqueLabel: "Probabilidade",
+    destaqueValor: formatProbability(probMeta),
+    tone: "amber",
+  };
 }
 
 function getObjetivoPrincipal(objetivos: ObjetivoResumo[]) {
@@ -741,27 +487,8 @@ function getObjetivoPrincipal(objetivos: ObjetivoResumo[]) {
   }, null);
 }
 
-function buildObjetivoReason(objetivo: ObjetivoResumo) {
-  if (!objetivo.detalhes) {
-    return "Esse objetivo entrou na leitura geral do seu diagnóstico.";
-  }
-
-  return `A estratégia considerou ${formatCurrency(objetivo.detalhes.valor)} em ${formatPrazo(
-    objetivo.detalhes.horizonte_anos
-  ).toLowerCase()}, com prioridade ${objetivo.detalhes.prioridade ?? "-"}.`;
-}
-
-function getPrincipalClasse(alocacao: Resultado["alocacao"]) {
-  return ALOCACAO_ITEMS.reduce((principal, item) => (alocacao[item.key] > alocacao[principal.key] ? item : principal));
-}
-
 function formatCurrency(value?: number) {
   return currencyFormatter.format(value ?? 0);
-}
-
-function getReservaProgress(atual: number, ideal: number) {
-  if (ideal <= 0) return 0;
-  return Math.min(Math.round((Math.max(atual, 0) / ideal) * 100), 100);
 }
 
 function formatPrazo(value?: number) {
@@ -787,147 +514,42 @@ function formatProbability(value: number | null) {
   return `${Math.round(value * 100)}%`;
 }
 
-function getPassoTone(status: OutputGenericoPassoStatus) {
-  if (status === "agora") return "bg-amber-500/15 text-amber-300";
-  if (status === "proximo") return "bg-primary-500/15 text-primary-300";
-  return "bg-zinc-800 text-zinc-400";
-}
-
-function formatPassoStatus(status: OutputGenericoPassoStatus) {
-  if (status === "agora") return "Agora";
-  if (status === "proximo") return "Próximo";
-  return "Depois";
-}
-
-function getProbabilityIconTone(value: number | null) {
-  if (value === null) return "bg-primary-500/10 text-primary-400";
-  if (value >= 0.8) return "bg-emerald-500/10 text-emerald-400";
-  if (value >= 0.6) return "bg-primary-500/10 text-primary-400";
-  return "bg-amber-500/10 text-amber-400";
-}
-
 function getProbabilityTextTone(value: number | null) {
   if (value === null) return "text-primary-300";
-  if (value >= 0.8) return "text-emerald-400";
-  if (value >= 0.6) return "text-primary-400";
-  return "text-amber-400";
+  if (value >= 0.8) return "text-emerald-300";
+  if (value >= 0.6) return "text-primary-300";
+  return "text-primary-300";
 }
 
 const PERFIL_CONFIG: Record<
   Perfil,
   {
     label: string;
-    color: string;
-    bg: string;
-    ring: string;
-    profileBg: string;
-    shadow: string;
+    iconBg: string;
+    iconColor: string;
     desc: string;
-    reasonTitle: string;
-    reasonDesc: string;
-    reasonTone: string;
     icon: LucideIcon;
   }
 > = {
   conservador: {
     label: "Conservador",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-    ring: "border-emerald-500/35",
-    profileBg: "bg-gradient-to-b from-emerald-500/10 via-transparent to-transparent",
-    shadow: "shadow-[0_0_42px_rgba(16,185,129,0.18)]",
+    iconBg: "bg-emerald-500/10",
+    iconColor: "text-emerald-300",
     desc: "Seu foco é proteger o que já conquistou e avançar com mais previsibilidade.",
-    reasonTitle: "Proteção em primeiro lugar",
-    reasonDesc: "A carteira foi pensada para reduzir sustos e preservar seu patrimônio enquanto você evolui.",
-    reasonTone: "bg-emerald-500/10 text-emerald-400",
     icon: ShieldCheck,
   },
   moderado: {
     label: "Moderado",
-    color: "text-blue-400",
-    bg: "bg-blue-500/10",
-    ring: "border-blue-500/35",
-    profileBg: "bg-gradient-to-b from-blue-500/10 via-transparent to-transparent",
-    shadow: "shadow-[0_0_42px_rgba(59,130,246,0.18)]",
+    iconBg: "bg-primary-500/15",
+    iconColor: "text-primary-300",
     desc: "Você busca equilíbrio entre segurança e crescimento, aceitando oscilações controladas.",
-    reasonTitle: "Equilíbrio entre crescer e proteger",
-    reasonDesc: "A estratégia combina estabilidade com uma parcela de crescimento para acompanhar seus objetivos.",
-    reasonTone: "bg-blue-500/10 text-blue-400",
     icon: Scale,
   },
   arrojado: {
     label: "Arrojado",
-    color: "text-orange-400",
-    bg: "bg-orange-500/10",
-    ring: "border-orange-500/35",
-    profileBg: "bg-gradient-to-b from-orange-500/10 via-transparent to-transparent",
-    shadow: "shadow-[0_0_42px_rgba(249,115,22,0.2)]",
+    iconBg: "bg-primary-500/15",
+    iconColor: "text-primary-300",
     desc: "Você aceita mais variação no caminho para buscar crescimento acima da média no longo prazo.",
-    reasonTitle: "Foco em crescimento patrimonial",
-    reasonDesc: "A estratégia dá mais espaço para ativos de crescimento quando isso conversa com seu prazo e perfil.",
-    reasonTone: "bg-orange-500/10 text-orange-400",
     icon: Rocket,
   },
 };
-
-const ALOCACAO_ITEMS: Array<{
-  key: keyof Resultado["alocacao"];
-  label: string;
-  barColor: string;
-  dotColor: string;
-  textColor: string;
-  tone: string;
-  icon: LucideIcon;
-}> = [
-  {
-    key: "acoes",
-    label: "Ações",
-    barColor: "bg-primary-500",
-    dotColor: "bg-primary-500",
-    textColor: "text-primary-400",
-    tone: "bg-primary-500/10 text-primary-400",
-    icon: TrendingUp,
-  },
-  {
-    key: "renda_fixa",
-    label: "Renda fixa",
-    barColor: "bg-blue-500",
-    dotColor: "bg-blue-500",
-    textColor: "text-blue-400",
-    tone: "bg-blue-500/10 text-blue-400",
-    icon: ShieldCheck,
-  },
-  {
-    key: "liquidez",
-    label: "Liquidez",
-    barColor: "bg-zinc-400",
-    dotColor: "bg-zinc-400",
-    textColor: "text-zinc-300",
-    tone: "bg-zinc-500/10 text-zinc-300",
-    icon: Droplets,
-  },
-];
-
-function ReservaAssetStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-amber-500/15 bg-zinc-950/35 p-4">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{label}</p>
-      <p className="mt-1 text-sm font-black text-zinc-100">{value}</p>
-    </div>
-  );
-}
-
-function formatPercent(value: number) {
-  return `${(value * 100).toFixed(1)}%`;
-}
-
-function formatPrazoAnos(value: number) {
-  if (value <= 0) return "Sem prazo";
-  return value === 1 ? "1 ano" : `${value.toFixed(1).replace(".", ",")} anos`;
-}
-
-function formatMesesReserva(value: number | null) {
-  if (value === null) return "Definir aporte";
-  if (value <= 0) return "Agora";
-  return value === 1 ? "1 mês" : `${value} meses`;
-}

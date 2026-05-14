@@ -7,6 +7,7 @@ import {
   Etapa5Data,
   DiagnosticoCompleto,
 } from "@/schemas/diagnosticoSchemas";
+import type { PlanoEspecifico } from "@/components/carteira-ideal/wizard/OutputEspecifico";
 
 type DiagnosticoState = Partial<DiagnosticoCompleto>;
 
@@ -20,47 +21,14 @@ type ResultadoDiagnostico = {
   };
   alertas: string[];
   output_generico?: {
-    status: "base_fragil" | "base_incompleta" | "meta_critica" | "meta_apertada" | "plano_viavel" | "plano_forte";
-    fase_estrategica: "construir_reserva" | "completar_reserva" | "investir_para_objetivos";
-    tipo_plano: "reserva_emergencia" | "objetivos";
-    bloquear_carteira_objetivos: boolean;
+    status: "meta_critica" | "meta_apertada" | "plano_viavel" | "plano_forte";
     titulo: string;
     subtitulo: string;
-    prioridade_atual: string;
-    passos: Array<{
-      titulo: string;
-      descricao: string;
-      status: "agora" | "proximo" | "depois";
-    }>;
     cta_label: string;
-    mostrar_probabilidade_no_topo: boolean;
-    metricas: {
-      probabilidade: number | null;
-      reserva_atual: number;
-      reserva_ideal: number;
-      gap_reserva: number;
-      aporte_recomendado_reserva: number;
-      meses_para_completar: number | null;
-      percentual_aporte_reserva: number;
-      plano_ativos: Array<{
-        asset_id: string;
-        nome: string;
-        categoria: "selic";
-        percentual: number;
-        valor_destino: number;
-        aporte_mensal: number;
-        retorno_liquido_aa: number;
-        retorno_bruto_aa: number;
-        volatilidade_aa: number;
-        prazo_anos: number;
-        liquidez: "diaria";
-        explicacao: string;
-      }>;
-    };
   };
   motor: {
     portfolio: Record<string, number>;
-    rules_applied: any;
+    rules_applied: unknown;
     risk: {
       mu: number;
       sigma: number;
@@ -74,9 +42,19 @@ type ResultadoDiagnostico = {
       aportado: number;
       median: number;
     };
-    analysis: any;
+    analysis: PlanoEspecifico["analysis"];
   };
 };
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Não foi possível salvar seu diagnóstico. Tente novamente.";
+}
+
+function getErrorStatus(error: unknown) {
+  if (typeof error !== "object" || error === null || !("status" in error)) return undefined;
+  const status = (error as { status?: unknown }).status;
+  return typeof status === "number" ? status : undefined;
+}
 
 export function useDiagnostico() {
   const router = useRouter();
@@ -88,7 +66,7 @@ export function useDiagnostico() {
 
   const avancarEtapa = (dadosEtapa: Partial<DiagnosticoCompleto>) => {
     setDados((prev) => ({ ...prev, ...dadosEtapa }));
-    setEtapaAtual((prev) => Math.min(prev + 1, 6)); // Agora vai até 6
+    setEtapaAtual((prev) => Math.min(prev + 1, 6));
   };
 
   const voltarEtapa = () => {
@@ -103,36 +81,21 @@ export function useDiagnostico() {
 
     try {
       const res = await DiagnosticoService.salvar(dadosCompletos);
-      setDados(dadosCompletos); // Sincroniza o estado para futuros refetches
-      setResultado(res);
-      setEtapaAtual(6); // Etapa 6 = Resultado
-    } catch (err: any) {
-      setError(err.message);
-      
-      // Se a sessão expirou (401), redireciona para login
-      if (err.status === 401 || err.message.includes("sessão expirada") || err.message.includes("não autenticado")) {
-        setTimeout(() => {
-          router.push("/auth/login");
-        }, 2000);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const ignorarReservaERefetch = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    const dadosCompletos = { ...dados, ignorar_reserva: true } as DiagnosticoCompleto;
-
-    try {
-      const res = await DiagnosticoService.salvar(dadosCompletos);
+      setDados(dadosCompletos);
       setResultado(res);
       setEtapaAtual(6);
-    } catch (err: any) {
-      setError(err.message);
-      if (err.status === 401 || err.message.includes("sessão expirada") || err.message.includes("não autenticado")) {
+    } catch (err: unknown) {
+      const message = getErrorMessage(err);
+      const status = getErrorStatus(err);
+      setError(message);
+
+      if (
+        status === 401 ||
+        message.includes("sessão expirada") ||
+        message.includes("sessao expirada") ||
+        message.includes("não autenticado") ||
+        message.includes("nao autenticado")
+      ) {
         setTimeout(() => {
           router.push("/auth/login");
         }, 2000);
@@ -154,6 +117,5 @@ export function useDiagnostico() {
     avancarEtapa,
     voltarEtapa,
     submeter,
-    ignorarReservaERefetch,
   };
 }

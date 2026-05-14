@@ -1,29 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 const goals = [
   {
     key: "house",
-    title: "Casa Própria",
+    title: "Casa própria",
     img: "/dream_house.png",
     tradPct: 23,
     synaptaPct: 85,
   },
   {
     key: "car",
-    title: "Carro dos Sonhos",
+    title: "Carro dos sonhos",
     img: "/dream_car.png",
     tradPct: 30,
     synaptaPct: 91,
   },
   {
     key: "travel",
-    title: "Viagem Internacional",
+    title: "Viagem internacional",
     img: "/dream_travel.png",
     tradPct: 20,
     synaptaPct: 88,
@@ -36,175 +36,155 @@ export function Hero() {
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveIdx((prev) => (prev + 1) % goals.length);
-    }, 3000);
+    }, 3600);
     return () => clearInterval(interval);
   }, []);
 
   const current = goals[activeIdx];
 
   return (
-    <section className="relative lg:min-h-screen flex items-center justify-center pt-28 pb-8 lg:pt-24 lg:pb-20 overflow-hidden">
-
-      {/* Background Gradients */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-600/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-gold-900/20 rounded-full blur-[120px] pointer-events-none" />
-
-      <div className="container mx-auto px-6 relative z-10 w-full max-w-7xl">
-        <div className="flex flex-col lg:flex-row items-center gap-2 lg:gap-16">
-
-          {/* ── LEFT COLUMN ── */}
+    <section className="relative min-h-[92vh] pt-24 pb-14 md:pt-28 md:pb-20 overflow-hidden">
+      <div className="container mx-auto px-6 max-w-7xl">
+        <div className="grid lg:grid-cols-[1.02fr_0.98fr] gap-12 lg:gap-20 items-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="flex-1 text-center lg:text-left"
+            transition={{ duration: 0.7 }}
+            className="max-w-3xl text-center lg:text-left"
           >
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight mb-4 lg:mb-6 leading-tight">
-              Acelere a conquista do seu <br className="hidden lg:block" />
-              <span className="gradient-text">próximo grande sonho.</span>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary-600 mb-6">
+              Planejamento patrimonial inteligente
+            </p>
+
+            <h1 className="font-editorial text-[4rem] leading-[0.88] sm:text-7xl lg:text-8xl text-blue-brand-950">
+              Seu patrimônio, finalmente, com direção.
             </h1>
 
-            {/* Desktop subtitle */}
-            <p className="hidden lg:block text-base sm:text-lg text-zinc-400 mb-6 lg:mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-              Seu carro zero, a casa própria ou a aposentadoria antecipada não precisam ser uma realidade distante. A Inteligência Artificial da Synapta analisa sua vida, corrige seus investimentos e cria a rota otimizada para você multiplicar seu patrimônio em menos tempo.
-            </p>
-            {/* Mobile subtitle */}
-            <p className="lg:hidden text-sm text-zinc-400 mb-3 max-w-xs mx-auto text-center leading-relaxed">
-              A Synapta analisa sua vida financeira e cria a rota mais rápida para você conquistar seus sonhos.
+            <p className="mt-8 text-base sm:text-lg leading-relaxed text-blue-brand-950/66 max-w-2xl mx-auto lg:mx-0">
+              A Synapta organiza sua vida financeira, corrige sua carteira e transforma objetivos em uma rota clara de aportes, risco e prazo.
             </p>
 
-          </motion.div>
-
-          {/* ── RIGHT COLUMN — Auto Slider ── */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="flex-1 w-full max-w-lg lg:max-w-none"
-          >
-            <div className="glass-panel p-5 sm:p-8 rounded-3xl relative">
-
-              {/* Image slide */}
-              <div className="mb-5 relative overflow-hidden rounded-2xl border border-white/5 shadow-2xl" style={{ height: "280px" }}>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={current.key}
-                    initial={{ opacity: 0, x: 50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -50 }}
-                    transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
-                    className="absolute inset-0"
-                  >
-                    <Image
-                      src={current.img}
-                      alt={current.title}
-                      fill
-                      className="object-cover"
-                      priority
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent opacity-70" />
-
-                    {/* Goal title */}
-                    <div className="absolute bottom-4 left-4 right-4 z-10">
-                      <p className="text-xs font-semibold text-primary-500 uppercase tracking-wider mb-1 drop-shadow-md">
-                        Objetivo Mapeado
-                      </p>
-                      <p className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">
-                        {current.title}
-                      </p>
-                    </div>
-                  </motion.div>
-                </AnimatePresence>
-
-                {/* Dot indicators */}
-                <div className="absolute top-4 right-4 flex gap-1.5 z-20 items-center">
-                  {goals.map((g, i) => (
-                    <button
-                      key={g.key}
-                      onClick={() => setActiveIdx(i)}
-                      className={`block h-1.5 rounded-full transition-all duration-300 ${
-                        activeIdx === i
-                          ? "bg-primary-500 w-4 shadow-[0_0_8px_rgba(201, 162, 75,0.8)]"
-                          : "bg-white/40 w-1.5"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Progress bars */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={`bars-${current.key}`}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.35 }}
-                  className="space-y-5"
-                >
-                  {/* Sem Synapta */}
-                  <div>
-                    <div className="flex justify-between items-end mb-2">
-                      <span className="text-sm text-zinc-500 font-medium">Sem Synapta</span>
-                      <span className="text-xs font-mono text-zinc-500">{current.tradPct}% do objetivo</span>
-                    </div>
-                    <div className="w-full bg-surface-light rounded-full h-2 overflow-hidden border border-border/30">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${current.tradPct}%` }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                        className="h-full bg-zinc-700 rounded-full"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Com Synapta */}
-                  <div>
-                    <div className="flex justify-between items-end mb-2">
-                      <span className="text-sm text-primary-400 font-bold flex items-center gap-1.5">
-                        <Sparkles size={13} className="animate-pulse" /> Com Synapta
-                      </span>
-                      <span className="text-xs font-mono font-bold text-primary-500">{current.synaptaPct}% do objetivo</span>
-                    </div>
-                    <div className="w-full bg-surface-light rounded-full h-3 overflow-hidden border border-border/30 shadow-inner">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${current.synaptaPct}%` }}
-                        transition={{ duration: 1.4, delay: 0.15, type: "spring", stiffness: 45, damping: 15 }}
-                        className="h-full bg-gradient-to-r from-primary-700 via-primary-500 to-gold-300 rounded-full relative overflow-hidden"
-                      >
-                        <motion.div
-                          animate={{ x: ["-100%", "400%"] }}
-                          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                          className="absolute top-0 bottom-0 w-24 bg-gradient-to-r from-transparent via-white/80 to-transparent skew-x-[30deg]"
-                        />
-                      </motion.div>
-                    </div>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-
-              {/* CTA Button */}
+            <div className="mt-9 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
               <Link
                 href="/auth/login"
-                className="mt-6 w-full justify-center px-6 py-4 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-gold-500 text-blue-brand-950 font-semibold rounded-full flex items-center gap-2 glow-effect transition-all cursor-pointer relative z-20"
+                className="w-full sm:w-auto px-7 py-3.5 bg-blue-brand-950 hover:bg-blue-brand-900 text-white font-semibold rounded-full flex items-center justify-center gap-2 transition-colors"
               >
-                <motion.div
-                  className="flex items-center gap-2"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  Alcançar meus objetivos
-                  <ArrowRight size={20} />
-                </motion.div>
+                Entrar na plataforma
+                <ArrowRight size={18} />
               </Link>
-
-              {/* Decorative glow */}
-              <div className="absolute bottom-0 right-0 left-0 h-1/2 bg-gradient-to-t from-primary-500/10 to-transparent pointer-events-none rounded-b-3xl" />
+              <a
+                href="#planos"
+                className="w-full sm:w-auto px-7 py-3.5 text-blue-brand-950/75 hover:text-blue-brand-950 font-semibold rounded-full border border-blue-brand-950/15 hover:border-blue-brand-950/35 transition-colors"
+              >
+                Ver planos
+              </a>
             </div>
           </motion.div>
 
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.12 }}
+            className="relative"
+          >
+            <div className="relative mx-auto w-full max-w-[560px]">
+              <div className="absolute -bottom-7 left-5 right-5 h-10 bg-blue-brand-950/15 blur-2xl" />
+              <div className="relative overflow-hidden rounded-[2rem] bg-blue-brand-950 text-white shadow-2xl">
+                <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">Objetivo ativo</p>
+                    <p className="font-editorial text-3xl leading-none mt-1">{current.title}</p>
+                  </div>
+                  <div className="flex gap-1.5">
+                    {goals.map((goal, idx) => (
+                      <button
+                        key={goal.key}
+                        onClick={() => setActiveIdx(idx)}
+                        aria-label={`Ver ${goal.title}`}
+                        className={`h-2 rounded-full transition-all ${
+                          activeIdx === idx ? "w-7 bg-primary-400" : "w-2 bg-white/35"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-[0.9fr_1.1fr] min-h-[360px]">
+                  <div className="relative min-h-[260px] md:min-h-full">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={current.key}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="absolute inset-0"
+                      >
+                        <Image
+                          src={current.img}
+                          alt={current.title}
+                          fill
+                          className="object-cover"
+                          priority
+                        />
+                        <div className="absolute inset-0 bg-blue-brand-950/25" />
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
+
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={`metrics-${current.key}`}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.35 }}
+                      className="p-6 sm:p-8 flex flex-col justify-center gap-7"
+                    >
+                      <div>
+                        <div className="flex justify-between text-xs text-white/50 mb-2">
+                          <span>Sem rota clara</span>
+                          <span>{current.tradPct}%</span>
+                        </div>
+                        <div className="h-1.5 bg-white/12 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${current.tradPct}%` }}
+                            transition={{ duration: 0.9, ease: "easeOut" }}
+                            className="h-full bg-white/40"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-xs mb-2">
+                          <span className="text-primary-300">Com Synapta</span>
+                          <span className="text-primary-300">{current.synaptaPct}%</span>
+                        </div>
+                        <div className="h-2 bg-white/12 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${current.synaptaPct}%` }}
+                            transition={{ duration: 1.1, ease: "easeOut" }}
+                            className="h-full bg-primary-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="border-t border-white/10 pt-6">
+                        <p className="font-editorial text-4xl leading-none text-white">
+                          Rota antes de impulso.
+                        </p>
+                        <p className="mt-3 text-sm leading-relaxed text-white/55">
+                          A plataforma traduz sonho, renda e carteira em decisões mensais.
+                        </p>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
     </section>

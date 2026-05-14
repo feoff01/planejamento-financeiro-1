@@ -27,7 +27,6 @@ export class CarteiraIdealService {
       savings: clientData.patrimonio_total || 0,
       monthly: clientData.aporte_mensal || 0,
       goals: [],
-      emergency: null,
     };
 
     const inputs = Array.isArray(goalInput) ? goalInput : [goalInput];

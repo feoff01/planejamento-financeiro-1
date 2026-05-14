@@ -52,18 +52,13 @@ export class DiagnosticoService {
     if (horizonteMax >= 15) pontos += 2;
     else if (horizonteMax >= 8) pontos += 1;
 
-    // Penalidade por reserva insuficiente (< 3 meses)
-    if (dados.meses_reserva < 3) pontos -= 1;
-
     // Determinar perfil
     const perfil: Perfil =
       pontos <= 3 ? "conservador" : pontos <= 7 ? "moderado" : "arrojado";
 
-    // Gerar alertas personalizados
+    // Gerar alertas personalizados. Reserva de emergência é tratada apenas como
+    // disclaimer no frontend e não altera o produto Carteira Ideal no MVP.
     const alertas: string[] = [];
-    if (dados.meses_reserva < 6) {
-      alertas.push("Sua reserva de emergência está abaixo de 6 meses de gastos. Esse é o primeiro passo antes de investir em ativos de maior risco.");
-    }
 
     // Persistir diagnóstico no banco
     await this.repo.upsert(userId, dados, perfil, token);
@@ -81,7 +76,6 @@ export class DiagnosticoService {
       savings: dados.patrimonio_total || 0,
       monthly: (dados as any).aporte_mensal || 0,
       goals: [],
-      emergency: null,
     };
 
     // Mapear objetivos detalhados para o formato do Motor
@@ -117,12 +111,8 @@ export class DiagnosticoService {
     const sim = Engine.runMonteCarlo(portfolio.alloc, client.savings, client.monthly, mainGoal.years, mainGoal.target, view, catalog);
     const trafficLight = Engine.planTrafficLight(client, mainGoal, portfolio, sim, view, catalog, risk);
     const planScore = Engine.planScore(client, mainGoal, portfolio, sim, view, catalog, risk);
-    const emergencyFund = Engine.getEmergencyFund(client);
     const outputGenerico = this.outputGenericoNarrative.build({
-      dados,
       probabilidade: sim.prob_meta,
-      alertas,
-      reservaAsset: catalog[emergencyFund.target_asset_id],
     });
 
     // ═══════════════════════════════════════════════════════════════════════════

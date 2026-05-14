@@ -1,19 +1,19 @@
 "use client";
 
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 
-import { CadastroSchema, CadastroFormData } from "@/schemas/authSchemas";
 import { useAuth } from "@/hooks/useAuth";
+import { CadastroFormData, CadastroSchema } from "@/schemas/authSchemas";
 
 const benefits = [
-  "Análise personalizada da sua carteira",
-  "Rota financeira otimizada por IA",
-  "Grátis para começar, sem cartão",
+  "Diagnóstico personalizado da sua vida financeira",
+  "Carteira ideal alinhada a objetivo, prazo e risco",
+  "Comece grátis, sem cartão",
 ];
 
 export default function CadastroPage() {
@@ -23,13 +23,13 @@ export default function CadastroPage() {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     formState: { errors },
   } = useForm<CadastroFormData>({
     resolver: zodResolver(CadastroSchema),
   });
 
-  const passwordValue = watch("password", "");
+  const passwordValue = useWatch({ control, name: "password", defaultValue: "" }) ?? "";
   const passwordStrength = getPasswordStrength(passwordValue);
 
   const onSubmit = (data: CadastroFormData) => {
@@ -37,207 +37,195 @@ export default function CadastroPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden">
-
-      {/* Background glows */}
-      <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-primary-600/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-gold-900/10 rounded-full blur-[100px] pointer-events-none" />
-
-      {/* Logo */}
-      <motion.div
-        initial={{ opacity: 0, y: -16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-8"
-      >
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-gold-600 rounded-lg flex items-center justify-center">
-            <span className="text-blue-brand-950 font-bold text-lg leading-none">S</span>
-          </div>
-          <span className="font-bold text-xl tracking-tight">
-            Synapta<span className="text-primary-500">Invest</span>
-          </span>
-        </Link>
-      </motion.div>
-
-      {/* Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="w-full max-w-md glass-panel rounded-3xl p-8 border border-white/5 relative z-10"
-      >
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white mb-1">Crie sua conta grátis</h1>
-          <p className="text-sm text-zinc-400">Comece sua jornada rumo à independência financeira.</p>
-        </div>
-
-        {/* Benefits strip */}
-        <div className="mb-6 space-y-2">
-          {benefits.map((b) => (
-            <div key={b} className="flex items-center gap-2.5">
-              <CheckCircle2 size={14} className="text-primary-500 shrink-0" />
-              <span className="text-xs text-zinc-400">{b}</span>
+    <main className="min-h-dvh bg-[#f7f3ea] px-4 py-8 text-blue-brand-950">
+      <div className="mx-auto grid min-h-[calc(100dvh-4rem)] w-full max-w-6xl items-center gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+        <motion.section
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55 }}
+          className="hidden lg:block"
+        >
+          <Link href="/" className="mb-16 inline-flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-brand-950">
+              <span className="text-sm font-bold leading-none text-primary-400">S</span>
             </div>
-          ))}
-        </div>
+            <span className="text-base font-semibold tracking-tight">
+              Synapta<span className="text-primary-600">Invest</span>
+            </span>
+          </Link>
 
-        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+          <p className="mb-6 text-xs font-semibold uppercase tracking-[0.28em] text-primary-600">
+            Nova conta
+          </p>
+          <h1 className="font-editorial text-6xl leading-[0.92] xl:text-7xl">
+            Comece com uma visão clara do seu patrimônio.
+          </h1>
 
-          {/* Nome completo */}
-          <div>
-            <label htmlFor="cadastro-nome" className="block text-sm font-medium text-zinc-300 mb-1.5">
-              Nome completo
-            </label>
-            <input
-              id="cadastro-nome"
-              type="text"
-              autoComplete="name"
-              placeholder="Seu nome"
-              {...register("nome")}
-              className="w-full px-4 py-3 rounded-xl bg-surface-light border border-border text-white placeholder-zinc-600 text-sm focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all"
-            />
-            {errors.nome && (
-              <p className="mt-1.5 text-xs text-red-400">{errors.nome.message}</p>
-            )}
+          <div className="mt-9 max-w-md divide-y divide-blue-brand-950/10 border-y border-blue-brand-950/10">
+            {benefits.map((benefit) => (
+              <div key={benefit} className="flex items-center gap-3 py-4">
+                <CheckCircle2 size={17} className="shrink-0 text-primary-600" />
+                <span className="text-sm font-medium text-blue-brand-950/66">{benefit}</span>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+
+        <motion.section
+          initial={{ opacity: 0, y: 22 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.08 }}
+          className="mx-auto w-full max-w-md rounded-[1.5rem] border border-blue-brand-950/10 bg-white/55 p-6 shadow-[0_24px_80px_rgba(11,37,69,0.08)] backdrop-blur md:p-8"
+        >
+          <Link href="/" className="mb-10 inline-flex items-center gap-2 lg:hidden">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-brand-950">
+              <span className="text-sm font-bold leading-none text-primary-400">S</span>
+            </div>
+            <span className="text-base font-semibold tracking-tight">
+              Synapta<span className="text-primary-600">Invest</span>
+            </span>
+          </Link>
+
+          <div className="mb-7">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-primary-600">
+              Cadastro
+            </p>
+            <h2 className="font-editorial text-5xl leading-none">Crie sua conta.</h2>
+            <p className="mt-4 text-sm leading-relaxed text-blue-brand-950/60">
+              A primeira leitura é gratuita e leva poucos minutos.
+            </p>
           </div>
 
-          {/* E-mail */}
-          <div>
-            <label htmlFor="cadastro-email" className="block text-sm font-medium text-zinc-300 mb-1.5">
-              E-mail
-            </label>
-            <input
-              id="cadastro-email"
-              type="email"
-              autoComplete="email"
-              placeholder="seu@email.com"
-              {...register("email")}
-              className="w-full px-4 py-3 rounded-xl bg-surface-light border border-border text-white placeholder-zinc-600 text-sm focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all"
-            />
-            {errors.email && (
-              <p className="mt-1.5 text-xs text-red-400">{errors.email.message}</p>
-            )}
-          </div>
-
-          {/* Senha */}
-          <div>
-            <label htmlFor="cadastro-password" className="block text-sm font-medium text-zinc-300 mb-1.5">
-              Senha
-            </label>
-            <div className="relative">
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+            <div>
+              <label htmlFor="cadastro-nome" className="mb-1.5 block text-sm font-semibold text-blue-brand-950/75">
+                Nome completo
+              </label>
               <input
-                id="cadastro-password"
-                type={showPass ? "text" : "password"}
-                autoComplete="new-password"
-                placeholder="Mínimo 6 caracteres"
-                {...register("password")}
-                className="w-full px-4 py-3 pr-12 rounded-xl bg-surface-light border border-border text-white placeholder-zinc-600 text-sm focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all"
+                id="cadastro-nome"
+                type="text"
+                autoComplete="name"
+                placeholder="Seu nome"
+                {...register("nome")}
+                className="w-full rounded-2xl border border-blue-brand-950/10 bg-white/70 px-4 py-3 text-sm text-blue-brand-950 placeholder:text-blue-brand-950/35 outline-none transition-all focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
               />
-              <button
-                type="button"
-                onClick={() => setShowPass((p) => !p)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
-                aria-label={showPass ? "Ocultar senha" : "Mostrar senha"}
-              >
-                {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+              {errors.nome && <p className="mt-1.5 text-xs text-red-500">{errors.nome.message}</p>}
             </div>
 
-            {/* Força da senha */}
-            {passwordValue.length > 0 && (
+            <div>
+              <label htmlFor="cadastro-email" className="mb-1.5 block text-sm font-semibold text-blue-brand-950/75">
+                E-mail
+              </label>
+              <input
+                id="cadastro-email"
+                type="email"
+                autoComplete="email"
+                placeholder="seu@email.com"
+                {...register("email")}
+                className="w-full rounded-2xl border border-blue-brand-950/10 bg-white/70 px-4 py-3 text-sm text-blue-brand-950 placeholder:text-blue-brand-950/35 outline-none transition-all focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
+              />
+              {errors.email && <p className="mt-1.5 text-xs text-red-500">{errors.email.message}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="cadastro-password" className="mb-1.5 block text-sm font-semibold text-blue-brand-950/75">
+                Senha
+              </label>
+              <div className="relative">
+                <input
+                  id="cadastro-password"
+                  type={showPass ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Mínimo 6 caracteres"
+                  {...register("password")}
+                  className="w-full rounded-2xl border border-blue-brand-950/10 bg-white/70 px-4 py-3 pr-12 text-sm text-blue-brand-950 placeholder:text-blue-brand-950/35 outline-none transition-all focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass((p) => !p)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-brand-950/45 transition-colors hover:text-blue-brand-950"
+                  aria-label={showPass ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+
+              {passwordValue.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="mt-2"
+                >
+                  <div className="mb-1 flex gap-1">
+                    {[1, 2, 3].map((level) => (
+                      <div
+                        key={level}
+                        className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                          passwordStrength.level >= level ? passwordStrength.bar : "bg-blue-brand-950/10"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className={`text-xs ${passwordStrength.color}`}>{passwordStrength.label}</p>
+                </motion.div>
+              )}
+
+              {errors.password && <p className="mt-1.5 text-xs text-red-500">{errors.password.message}</p>}
+            </div>
+
+            {error && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
-                className="mt-2"
+                className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-600"
               >
-                <div className="flex gap-1 mb-1">
-                  {[1, 2, 3].map((level) => (
-                    <div
-                      key={level}
-                      className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                        passwordStrength.level >= level
-                          ? passwordStrength.level === 1
-                            ? "bg-red-500"
-                            : passwordStrength.level === 2
-                            ? "bg-yellow-500"
-                            : "bg-green-500"
-                          : "bg-zinc-700"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <p className={`text-xs ${passwordStrength.color}`}>{passwordStrength.label}</p>
+                {error}
               </motion.div>
             )}
 
-            {errors.password && (
-              <p className="mt-1.5 text-xs text-red-400">{errors.password.message}</p>
-            )}
-          </div>
-
-          {/* Erro global do backend */}
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-400"
+            <motion.button
+              type="submit"
+              disabled={isLoading}
+              whileTap={{ scale: isLoading ? 1 : 0.98 }}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-brand-950 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-blue-brand-900 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {error}
-            </motion.div>
-          )}
+              {isLoading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Criando sua conta...
+                </>
+              ) : (
+                <>
+                  Criar conta grátis
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </motion.button>
+          </form>
 
-          {/* Submit */}
-          <motion.button
-            type="submit"
-            disabled={isLoading}
-            whileHover={{ scale: isLoading ? 1 : 1.02 }}
-            whileTap={{ scale: isLoading ? 1 : 0.98 }}
-            className="w-full py-3.5 rounded-full font-semibold text-sm bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-gold-500 text-blue-brand-950 flex items-center justify-center gap-2 glow-effect transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed mt-2"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Criando sua conta...
-              </>
-            ) : (
-              <>
-                Criar conta grátis
-                <ArrowRight size={16} />
-              </>
-            )}
-          </motion.button>
-        </form>
+          <p className="mt-6 text-center text-sm text-blue-brand-950/55">
+            Já tem uma conta?{" "}
+            <Link href="/auth/login" className="font-semibold text-primary-700 transition-colors hover:text-primary-600">
+              Entrar
+            </Link>
+          </p>
+        </motion.section>
 
-        <p className="mt-6 text-center text-sm text-zinc-500">
-          Já tem uma conta?{" "}
-          <Link href="/auth/login" className="text-primary-500 hover:text-primary-400 font-medium transition-colors">
-            Entrar
-          </Link>
+        <p className="text-center text-xs text-blue-brand-950/40 lg:col-start-2">
+          Ao criar uma conta, você concorda com nossos Termos de Uso e Política de Privacidade.
         </p>
-      </motion.div>
-
-      {/* Disclaimer */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="mt-8 text-xs text-zinc-700 text-center max-w-sm relative z-10"
-      >
-        Ao criar uma conta, você concorda com nossos Termos de Uso e Política de Privacidade.
-      </motion.p>
-    </div>
+      </div>
+    </main>
   );
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
 function getPasswordStrength(password: string): {
   level: number;
   label: string;
   color: string;
+  bar: string;
 } {
-  if (password.length === 0) return { level: 0, label: "", color: "" };
+  if (password.length === 0) return { level: 0, label: "", color: "", bar: "" };
 
   const hasLetter = /[a-zA-Z]/.test(password);
   const hasNumber = /[0-9]/.test(password);
@@ -246,7 +234,7 @@ function getPasswordStrength(password: string): {
 
   const score = [hasLetter, hasNumber, hasSpecial, isLong].filter(Boolean).length;
 
-  if (score <= 1) return { level: 1, label: "Senha fraca", color: "text-red-400" };
-  if (score <= 2) return { level: 2, label: "Senha razoável", color: "text-yellow-400" };
-  return { level: 3, label: "Senha forte", color: "text-green-400" };
+  if (score <= 1) return { level: 1, label: "Senha fraca", color: "text-red-600", bar: "bg-red-500" };
+  if (score <= 2) return { level: 2, label: "Senha razoável", color: "text-primary-700", bar: "bg-primary-500" };
+  return { level: 3, label: "Senha forte", color: "text-emerald-600", bar: "bg-emerald-500" };
 }

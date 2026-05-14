@@ -38,7 +38,7 @@ export class DiagnosticoRepository {
    */
   async upsert(userId: string, dados: DiagnosticoInput, perfil: string, token: string) {
     // Extrai campos que não mapeiam diretamente para colunas da tabela
-    const { valor_reserva, objetivos_selecionados, detalhes_objetivos, ...dadosSimples } = dados as any;
+    const { objetivos_selecionados, detalhes_objetivos, ...dadosSimples } = dados as any;
 
     const userSupabase = this.getClient(token);
 

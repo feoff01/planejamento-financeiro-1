@@ -3,6 +3,10 @@ import { useRouter } from "next/navigation";
 import { AuthService } from "@/services/auth/AuthService";
 import { LoginFormData, CadastroFormData } from "@/schemas/authSchemas";
 
+function getErrorMessage(err: unknown, fallback: string) {
+  return err instanceof Error ? err.message : fallback;
+}
+
 export function useAuth() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,8 +24,8 @@ export function useAuth() {
       router.push("/dashboard");
       return result.user;
       
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Não foi possível entrar agora."));
       return null;
     } finally {
       setIsLoading(false);
@@ -45,8 +49,8 @@ export function useAuth() {
       }
       
       return result.user;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Não foi possível criar sua conta agora."));
       return null;
     } finally {
       setIsLoading(false);

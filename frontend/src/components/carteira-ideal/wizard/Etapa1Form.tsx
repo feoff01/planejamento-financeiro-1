@@ -1,16 +1,20 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useForm, Controller, Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
-import { Etapa1Schema, Etapa1Data } from "@/schemas/diagnosticoSchemas";
+import { ArrowRight, AlertTriangle } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Control, Controller, useForm, useWatch } from "react-hook-form";
+
+import { Etapa1Data, Etapa1Schema } from "@/schemas/diagnosticoSchemas";
 
 type Props = { onNext: (data: Etapa1Data) => void };
 
+const inputClass =
+  "w-full rounded-2xl border border-blue-brand-950/10 bg-white/70 px-4 py-3 text-sm text-blue-brand-950 placeholder:text-blue-brand-950/35 outline-none transition-all focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10";
+
 const formatToBRL = (value: number | undefined | null | "") => {
-  if (value === undefined || value === null || value === "" || isNaN(value)) return "";
+  if (value === undefined || value === null || value === "" || Number.isNaN(value)) return "";
   return new Intl.NumberFormat("pt-BR").format(value);
 };
 
@@ -36,9 +40,13 @@ function CurrencyInput({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-zinc-300 mb-1.5">{label}</label>
+      <label htmlFor={id} className="mb-1.5 block text-sm font-semibold text-blue-brand-950/75">
+        {label}
+      </label>
       <div className="relative">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 text-sm font-medium">R$</span>
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-blue-brand-950/40">
+          R$
+        </span>
         <Controller
           name={name}
           control={control}
@@ -50,13 +58,13 @@ function CurrencyInput({
               inputMode="numeric"
               value={formatToBRL(value)}
               onChange={(e) => onChange(parseBRL(e.target.value))}
-              className="w-full pl-10 pr-4 py-3 rounded-xl bg-surface-light border border-border text-white placeholder-zinc-600 text-sm focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all"
+              className={`${inputClass} pl-10`}
               placeholder="0"
             />
           )}
         />
       </div>
-      {error && <p className="mt-1.5 text-xs text-red-400">{error.message}</p>}
+      {error && <p className="mt-1.5 text-xs text-red-500">{error.message}</p>}
     </div>
   );
 }
@@ -64,22 +72,25 @@ function CurrencyInput({
 export function Etapa1Form({ onNext }: Props) {
   const hasUserAdjustedAporte = useRef(false);
 
-  const { handleSubmit, watch, control, setValue, formState: { errors } } = useForm<Etapa1Data>({
+  const {
+    handleSubmit,
+    control,
+    setValue,
+    formState: { errors },
+  } = useForm<Etapa1Data>({
     resolver: zodResolver(Etapa1Schema),
     defaultValues: {
       idade: undefined,
       renda_mensal: undefined,
       gastos_mensais: undefined,
       aporte_mensal: 0,
-    }
+    },
   });
 
-  const renda = watch("renda_mensal") || 0;
-  const gastos = watch("gastos_mensais") || 0;
-  const aporte = watch("aporte_mensal") || 0;
+  const renda = useWatch({ control, name: "renda_mensal" }) || 0;
+  const gastos = useWatch({ control, name: "gastos_mensais" }) || 0;
+  const aporte = useWatch({ control, name: "aporte_mensal" }) || 0;
   const sobra = renda - gastos;
-  
-  // Porcentagem calculada para o slider
   const porcentagemInvestimento = sobra > 0 ? Math.min(Math.round((aporte / sobra) * 100), 100) : 0;
 
   useEffect(() => {
@@ -100,7 +111,9 @@ export function Etapa1Form({ onNext }: Props) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-[0.7fr_1.65fr_1.65fr]">
         <div>
-          <label htmlFor="idade" className="block text-sm font-medium text-zinc-300 mb-1.5">Sua idade</label>
+          <label htmlFor="idade" className="mb-1.5 block text-sm font-semibold text-blue-brand-950/75">
+            Sua idade
+          </label>
           <Controller
             name="idade"
             control={control}
@@ -112,12 +125,12 @@ export function Etapa1Form({ onNext }: Props) {
                 inputMode="numeric"
                 value={value || ""}
                 onChange={(e) => onChange(e.target.value === "" ? undefined : Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl bg-surface-light border border-border text-white placeholder-zinc-600 text-sm focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all"
+                className={inputClass}
                 placeholder="0"
               />
             )}
           />
-          {errors.idade && <p className="mt-1.5 text-xs text-red-400">{errors.idade.message}</p>}
+          {errors.idade && <p className="mt-1.5 text-xs text-red-500">{errors.idade.message}</p>}
         </div>
 
         <CurrencyInput
@@ -129,39 +142,46 @@ export function Etapa1Form({ onNext }: Props) {
         />
         <CurrencyInput
           id="gastos_mensais"
-          label="Gastos mensais totais (incluindo dívidas)"
+          label="Gastos mensais totais"
           name="gastos_mensais"
           control={control}
           error={errors.gastos_mensais}
         />
       </div>
 
-      {/* Sobra mensal e Slider de Investimento */}
       {renda > 0 && gastos > 0 && sobra > 0 ? (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
-          className="space-y-6 p-5 rounded-2xl bg-primary-500/5 border border-primary-500/20"
+          className="space-y-6 rounded-[1.25rem] border border-blue-brand-950/10 bg-[#f7f3ea]/70 p-5"
         >
-          <div className="flex items-center justify-between">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <p className="text-xs text-zinc-400 font-medium uppercase tracking-wider mb-1">Capacidade de Investimento</p>
-              <h3 className="text-xl font-bold text-white">R$ {sobra.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</h3>
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-brand-950/40">
+                Capacidade mensal
+              </p>
+              <h3 className="font-editorial text-4xl leading-none text-blue-brand-950">
+                R$ {sobra.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </h3>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-zinc-400 font-medium uppercase tracking-wider mb-1">Valor do Aporte</p>
-              <h3 className="text-xl font-bold text-primary-400">R$ {aporte.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</h3>
+            <div className="sm:text-right">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-brand-950/40">
+                Aporte escolhido
+              </p>
+              <h3 className="font-editorial text-4xl leading-none text-primary-700">
+                R$ {aporte.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </h3>
             </div>
           </div>
 
           <div className="space-y-3">
-            <div className="flex justify-between items-end">
-              <label className="text-sm font-semibold text-zinc-300">
+            <div className="flex items-end justify-between gap-4">
+              <label className="text-sm font-semibold text-blue-brand-950/72">
                 Quanto desse valor você quer investir?
               </label>
-              <span className="text-lg font-bold text-primary-500">{porcentagemInvestimento}%</span>
+              <span className="text-lg font-bold text-primary-700">{porcentagemInvestimento}%</span>
             </div>
-            
+
             <input
               type="range"
               min="0"
@@ -169,30 +189,36 @@ export function Etapa1Form({ onNext }: Props) {
               step="5"
               value={porcentagemInvestimento}
               onChange={(e) => handleSliderChange(Number(e.target.value))}
-              className="w-full h-2 bg-blue-brand-800 rounded-lg appearance-none cursor-pointer accent-primary-500"
+              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-blue-brand-950/10 accent-primary-500"
             />
-            
-            <div className="flex justify-between text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
-              <span>Mínimo (0%)</span>
-              <span>Tudo (100%)</span>
+
+            <div className="flex justify-between text-[10px] font-bold uppercase tracking-[0.18em] text-blue-brand-950/35">
+              <span>0%</span>
+              <span>100%</span>
             </div>
           </div>
 
-          <p className="text-[11px] text-zinc-500 leading-relaxed italic">
-            * O restante (R$ {(sobra - aporte).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}) ficará reservado para seu lazer ou reserva de contingência.
+          <p className="text-xs leading-relaxed text-blue-brand-950/45">
+            O restante, R$ {(sobra - aporte).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}, pode permanecer para lazer, reserva ou ajustes de rotina.
           </p>
         </motion.div>
-      ) : renda > 0 && gastos > 0 && sobra <= 0 && (
-        <div className="px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/5 text-sm font-medium text-red-400">
-          ⚠ Seus gastos superam sua renda. Para começar a investir com a Synapta, você precisará equilibrar suas contas primeiro.
-        </div>
+      ) : (
+        renda > 0 &&
+        gastos > 0 &&
+        sobra <= 0 && (
+          <div className="flex gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-600">
+            <AlertTriangle size={17} className="mt-0.5 shrink-0" />
+            Seus gastos superam sua renda. Para investir com consistência, primeiro precisamos equilibrar esse fluxo.
+          </div>
+        )
       )}
 
       <button
         type="submit"
-        className="w-full py-3.5 rounded-full font-semibold text-sm bg-gradient-to-r from-primary-500 to-primary-600 text-blue-brand-950 flex items-center justify-center gap-2 glow-effect cursor-pointer hover:from-primary-600 hover:to-gold-500 transition-all"
+        className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-brand-950 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-blue-brand-900"
       >
-        Continuar <ArrowRight size={16} />
+        Continuar
+        <ArrowRight size={16} />
       </button>
     </form>
   );

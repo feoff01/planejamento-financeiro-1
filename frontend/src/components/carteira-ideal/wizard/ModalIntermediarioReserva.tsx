@@ -1,53 +1,42 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ShieldAlert, ArrowRight, Target } from "lucide-react";
+import { ArrowRight, ShieldAlert } from "lucide-react";
 
 type Props = {
-  onTracarReserva: () => void;
-  onPularReserva: () => void;
+  onContinue: () => void;
 };
 
-export function ModalIntermediarioReserva({ onTracarReserva, onPularReserva }: Props) {
+export function ReservaDisclaimerModal({ onContinue }: Props) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+      initial={{ opacity: 0, scale: 0.98, y: 18 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      className="mx-auto w-full max-w-2xl overflow-hidden rounded-3xl border border-border/70 bg-surface/80 shadow-[0_24px_80px_rgba(0,0,0,0.35)]"
+      className="mx-auto w-full max-w-2xl overflow-hidden rounded-[1.5rem] border border-blue-brand-950/10 bg-[#f7f3ea] shadow-[0_24px_80px_rgba(11,37,69,0.12)]"
     >
       <div className="p-6 text-center sm:p-10">
-        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-amber-500/35 bg-amber-500/10 shadow-[0_0_42px_rgba(245,158,11,0.18)]">
-          <ShieldAlert size={36} className="text-amber-400" />
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-blue-brand-950 text-primary-400">
+          <ShieldAlert size={36} />
         </div>
-        
-        <h2 className="mt-6 text-2xl font-black text-white sm:text-3xl">Ponto de Atenção</h2>
-        <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-zinc-400">
-          Percebemos que você não possui uma reserva de emergência completa. A reserva é essencial antes de começar a correr atrás dos seus objetivos de longo prazo.
+
+        <p className="mt-7 text-xs font-semibold uppercase tracking-[0.24em] text-primary-700">
+          Aviso importante
+        </p>
+        <h2 className="mx-auto mt-3 max-w-lg font-editorial text-5xl leading-[0.95] text-blue-brand-950">
+          Antes dos objetivos, proteja a base.
+        </h2>
+        <p className="mx-auto mt-5 max-w-lg text-sm leading-relaxed text-blue-brand-950/60">
+          Antes de seguir recomendações para metas de longo prazo, recomendamos manter uma reserva de emergência de pelo menos 6 meses dos seus gastos em renda fixa com liquidez, como Tesouro Selic.
         </p>
 
-        <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onTracarReserva}
-            className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-amber-300 transition-colors hover:bg-amber-500/20"
-          >
-            <ShieldAlert size={24} className="mb-2 text-amber-400" />
-            <span className="text-sm font-black uppercase tracking-wider">Traçar Reserva</span>
-            <span className="mt-1 text-xs font-medium text-amber-400/70">Recomendado</span>
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onPularReserva}
-            className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-border/40 bg-surface-light p-5 text-zinc-300 transition-colors hover:bg-surface-light/80"
-          >
-            <Target size={24} className="mb-2 text-primary-500" />
-            <span className="text-sm font-black uppercase tracking-wider">Pular para Objetivos</span>
-            <span className="mt-1 text-xs font-medium text-zinc-500">Assumir os riscos</span>
-          </motion.button>
-        </div>
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={onContinue}
+          className="mt-8 flex min-h-12 w-full items-center justify-center gap-3 rounded-full bg-blue-brand-950 px-5 py-4 text-sm font-semibold text-white transition-colors hover:bg-blue-brand-900"
+        >
+          <span>Entendi, ver diagnóstico</span>
+          <ArrowRight size={18} />
+        </motion.button>
       </div>
     </motion.div>
   );

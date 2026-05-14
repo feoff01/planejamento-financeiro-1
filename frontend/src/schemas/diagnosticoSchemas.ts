@@ -24,14 +24,6 @@ export const Etapa2Schema = z
       .number({ message: "Informe seu patrimônio atual." })
       .min(0, "O patrimônio não pode ser negativo."),
     tipos_ativos: z.array(z.string()),
-    valor_reserva: z
-      .number({ message: "Informe o valor total da sua reserva." })
-      .min(0),
-    meses_reserva: z.number().min(0),
-  })
-  .refine((data) => data.valor_reserva <= data.patrimonio_total, {
-    message: "A reserva não pode ser maior que o patrimônio total.",
-    path: ["valor_reserva"],
   });
 
 // ── Etapa 3: Seleção de Objetivos ─────────────────────────────────────────────

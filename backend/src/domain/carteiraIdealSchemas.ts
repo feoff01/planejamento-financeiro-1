@@ -21,8 +21,8 @@ export const MarketAssumptionsSchema = z.object({
   macro_tilts: z.record(z.string(), z.number()).default({
     'selic': -0.05,
     'prefixado': -0.05,
-    'ipca': 0.15,
-    'equity': -0.05,
+    'ipca': 0.10,
+    'equity': 0.00,
   }),
   selic_min: z.number().default(0.05),
   equity_max: z.number().default(0.85),
@@ -58,14 +58,6 @@ export const GoalSchema = z.object({
 
 export type Goal = z.infer<typeof GoalSchema>;
 
-export const EmergencyFundSchema = z.object({
-  months_target: z.number().default(6),
-  balance: z.number().nullable().default(null),
-  target_asset_id: z.string().default('lft_2028'),
-});
-
-export type EmergencyFund = z.infer<typeof EmergencyFundSchema>;
-
 export const ClientSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -75,7 +67,6 @@ export const ClientSchema = z.object({
   savings: z.number(),
   monthly: z.number(),
   goals: z.array(GoalSchema).default([]),
-  emergency: EmergencyFundSchema.nullable().default(null),
 });
 
 export type Client = z.infer<typeof ClientSchema>;

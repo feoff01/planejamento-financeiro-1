@@ -5,6 +5,7 @@ import { ArrowLeft, Lock, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+
 import { useAuth } from "@/hooks/useAuth";
 import { AuthService } from "@/services/auth/AuthService";
 import { navigationItems } from "./navigationItems";
@@ -28,17 +29,17 @@ export function Sidebar() {
   }, []);
 
   return (
-    <aside className="hidden md:flex fixed top-0 left-0 h-full w-64 bg-surface border-r border-white/5 flex-col z-40 pt-6 pb-8">
-      <div className="px-6 mb-10 flex items-center gap-2.5">
-        <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-gold-600 rounded-lg flex items-center justify-center shrink-0">
-          <span className="text-blue-brand-950 font-bold text-base leading-none">S</span>
+    <aside className="fixed left-0 top-0 z-40 hidden h-full w-64 flex-col border-r border-blue-brand-950/10 bg-[#f7f3ea] pb-8 pt-6 text-blue-brand-950 md:flex">
+      <div className="mb-10 flex items-center gap-2.5 px-6">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-brand-950">
+          <span className="text-sm font-bold leading-none text-primary-400">S</span>
         </div>
-        <span className="font-bold text-lg tracking-tight">
-          Synapta<span className="text-primary-500">Invest</span>
+        <span className="text-base font-semibold tracking-tight">
+          Synapta<span className="text-primary-600">Invest</span>
         </span>
       </div>
 
-      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3">
         {navigationItems.map((item, i) => {
           const Icon = item.icon;
           const isUnlocked = !item.locked;
@@ -47,17 +48,21 @@ export function Sidebar() {
           const itemContent = (
             <div
               className={`
-                flex min-h-11 items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-                ${isUnlocked
-                  ? "hover:bg-primary-500/10 hover:text-primary-400 text-zinc-300 cursor-pointer"
-                  : "text-zinc-600 cursor-not-allowed select-none"
+                flex min-h-11 items-center gap-3 rounded-full border px-3.5 py-2.5 text-sm font-semibold transition-all
+                ${
+                  isUnlocked
+                    ? "cursor-pointer text-blue-brand-950/70 hover:border-blue-brand-950/10 hover:bg-white/55 hover:text-blue-brand-950"
+                    : "cursor-not-allowed select-none text-blue-brand-950/30"
                 }
-                ${isActive ? "bg-primary-500/10 text-primary-400 border border-primary-500/20" : "border border-transparent"}
+                ${isActive ? "border-blue-brand-950 bg-blue-brand-950 text-white shadow-sm" : "border-transparent"}
               `}
             >
-              <Icon size={16} className={isActive ? "text-primary-400" : isUnlocked ? "text-zinc-400" : "text-zinc-700"} />
+              <Icon
+                size={16}
+                className={isActive ? "text-primary-400" : isUnlocked ? "text-blue-brand-950/50" : "text-blue-brand-950/25"}
+              />
               <span className="flex-1">{item.label}</span>
-              {item.locked && <Lock size={12} className="text-zinc-700 shrink-0" />}
+              {item.locked && <Lock size={12} className="shrink-0 text-blue-brand-950/25" />}
             </div>
           );
 
@@ -66,7 +71,7 @@ export function Sidebar() {
               key={item.label}
               initial={{ opacity: 0, x: -12 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05 }}
+              transition={{ delay: i * 0.035 }}
             >
               {isUnlocked && item.href ? <Link href={item.href}>{itemContent}</Link> : itemContent}
             </motion.div>
@@ -74,25 +79,25 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="px-4 mt-auto flex flex-col gap-4">
+      <div className="mt-auto flex flex-col gap-4 px-4">
         <Link
           href="/"
-          className="flex min-h-11 items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-all"
+          className="flex min-h-11 items-center gap-3 rounded-full px-3.5 py-2.5 text-sm font-semibold text-blue-brand-950/55 transition-all hover:bg-white/55 hover:text-blue-brand-950"
         >
           <ArrowLeft size={16} />
           <span>Voltar para o site</span>
         </Link>
 
-        <div className="pt-4 border-t border-white/5 flex items-center justify-between px-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-blue-brand-800 flex items-center justify-center shrink-0">
-              <User size={14} className="text-zinc-400" />
+        <div className="flex items-center justify-between border-t border-blue-brand-950/10 px-2 pt-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-brand-950 text-primary-400">
+              <User size={15} />
             </div>
-            <span className="text-sm font-medium text-zinc-300 truncate max-w-[100px]">{userName}</span>
+            <span className="max-w-[110px] truncate text-sm font-semibold text-blue-brand-950/72">{userName}</span>
           </div>
           <button
             onClick={signOut}
-            className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all shrink-0"
+            className="rounded-full p-2 text-blue-brand-950/45 transition-all hover:bg-red-500/10 hover:text-red-600"
             title="Sair"
           >
             <LogOut size={16} />
