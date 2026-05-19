@@ -44,25 +44,25 @@ export class OutputGenericoNarrativeService {
         titulo: "Seu objetivo pede uma rota mais inteligente",
         subtitulo:
           "O alvo informado ainda exige ajustes importantes, mas isso não significa falta de plano. Significa que precisamos escolher o melhor caminho.",
-        cta_label: "Montar minha rota ajustada",
+        cta_label: "Desbloquear plano completo",
       },
       meta_apertada: {
         titulo: "Seu plano está perto, mas precisa de alguns ajustes",
         subtitulo:
           "A estratégia tem caminho, porém a margem ainda está apertada. O próximo passo é transformar a meta em uma rota mais robusta.",
-        cta_label: "Ver como fortalecer meu plano",
+        cta_label: "Desbloquear plano completo",
       },
       plano_viavel: {
         titulo: "Sua estratégia está bem encaminhada",
         subtitulo:
           "Com os dados informados, o plano já mostra uma rota viável para buscar seu objetivo com equilíbrio.",
-        cta_label: "Ver plano detalhado",
+        cta_label: "Desbloquear plano completo",
       },
       plano_forte: {
         titulo: "Seu plano tem uma boa margem de segurança",
         subtitulo:
           "A combinação entre aporte, prazo, objetivo e perfil cria uma rota forte para perseguir o objetivo informado.",
-        cta_label: "Ver carteira ideal completa",
+        cta_label: "Desbloquear plano completo",
       },
     };
 

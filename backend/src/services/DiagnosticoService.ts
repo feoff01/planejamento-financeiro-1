@@ -2,10 +2,22 @@ import { DiagnosticoInput } from "../domain/diagnosticoSchemas";
 import { DiagnosticoRepository } from "../repositories/DiagnosticoRepository";
 import { CarteiraIdealRepository } from "../repositories/CarteiraIdealRepository";
 import * as Engine from "./CarteiraIdealEngine";
-import { Client, Goal } from "../domain/carteiraIdealSchemas";
+import { Asset, Client, Goal } from "../domain/carteiraIdealSchemas";
 import { OutputGenericoNarrativeService } from "./OutputGenericoNarrativeService";
 
 type Perfil = "conservador" | "moderado" | "arrojado";
+type AssetGroupKey = "renda_fixa" | "renda_variavel" | "liquidez";
+
+type TeaserAsset = {
+  id: string;
+  label: string;
+};
+
+type TeaserAssetGroup = {
+  key: AssetGroupKey;
+  label: string;
+  assets: TeaserAsset[];
+};
 
 const PONTOS_REACAO: Record<string, number> = {
   vender_tudo: 0, espera_preocupado: 1, mantenho_tranquilo: 2, compra_mais: 3,
@@ -111,7 +123,7 @@ export class DiagnosticoService {
     const sim = Engine.runMonteCarlo(portfolio.alloc, client.savings, client.monthly, mainGoal.years, mainGoal.target, view, catalog);
     const trafficLight = Engine.planTrafficLight(client, mainGoal, portfolio, sim, view, catalog, risk);
     const planScore = Engine.planScore(client, mainGoal, portfolio, sim, view, catalog, risk);
-    const outputGenerico = this.outputGenericoNarrative.build({
+    const outputGenericoBase = this.outputGenericoNarrative.build({
       probabilidade: sim.prob_meta,
     });
 
@@ -134,8 +146,14 @@ export class DiagnosticoService {
     // Converter para porcentagem inteira
     const alocacaoPercent = {
       renda_fixa: Math.round(alocacaoAgregada.renda_fixa * 100),
-      acoes: Math.round(alocacaoAgregada.acoes * 100),
-      liquidez: Math.round(alocacaoAgregada.liquidez * 100),
+    };
+    const outputGenerico = {
+      ...outputGenericoBase,
+      teaser: {
+        tempo_estimado_anos: mainGoal.years,
+        chance_sucesso: this.buildChanceSucesso(sim.prob_meta),
+        asset_groups: this.buildPublicAssetGroups(portfolio.alloc, catalog),
+      },
     };
 
     // Salvar snapshot do portfólio
@@ -150,30 +168,69 @@ export class DiagnosticoService {
     // FASE 4: RETORNAR RESULTADO UNIFICADO
     // ═══════════════════════════════════════════════════════════════════════════
     return {
-      perfil,
-      pontos,
       alocacao: alocacaoPercent,
-      alertas,
       output_generico: outputGenerico,
-      // Dados expandidos do Motor Real
-      motor: {
-        portfolio: portfolio.alloc,
-        rules_applied: portfolio.rules,
-        risk: {
-          mu: risk.mu,
-          sigma: risk.sigma,
-          sharpe: risk.sharpe,
-          var_95: risk.var_95,
-        },
-        simulation: {
-          prob_meta: sim.prob_meta,
-          prob_perda_real: sim.prob_perda_real,
-          prob_perda_nom: sim.prob_perda_nom,
-          aportado: sim.aportado,
-          median: sim.median,
-        },
-        analysis: fullAnalysis,
-      },
+    };
+  }
+
+  private buildPublicAssetGroups(
+    alloc: Record<string, number>,
+    catalog: Record<string, Asset>
+  ): TeaserAssetGroup[] {
+    const groups: Record<AssetGroupKey, TeaserAssetGroup> = {
+      renda_fixa: { key: "renda_fixa", label: "Renda fixa", assets: [] },
+      renda_variavel: { key: "renda_variavel", label: "Renda variável", assets: [] },
+      liquidez: { key: "liquidez", label: "Liquidez", assets: [] },
+    };
+
+    const liquidityPreview = Object.entries(alloc)
+      .filter(([id]) => catalog[id]?.cat === "selic")
+      .sort(([, a], [, b]) => b - a)[0];
+
+    if (liquidityPreview) {
+      const [id] = liquidityPreview;
+      groups.liquidez.assets.push({
+        id: "liquidez-preview",
+        label: catalog[id].label,
+      });
+    }
+
+    return [groups.renda_fixa, groups.renda_variavel, groups.liquidez];
+  }
+
+  private buildChanceSucesso(probabilidade: number | null) {
+    if (probabilidade === null) {
+      return {
+        value: null,
+        label: "Indefinida" as const,
+        message:
+          "Sem uma meta numérica definida, montamos a estratégia como uma rota de crescimento para acompanhar no plano completo.",
+      };
+    }
+
+    if (probabilidade >= 0.8) {
+      return {
+        value: probabilidade,
+        label: "Alta" as const,
+        message:
+          "Seu plano está bem alinhado ao objetivo informado. O plano completo mostra os ativos e a projeção detalhada.",
+      };
+    }
+
+    if (probabilidade >= 0.6) {
+      return {
+        value: probabilidade,
+        label: "Moderada" as const,
+        message:
+          "Seu objetivo é viável, mas alguns ajustes podem melhorar a margem de segurança da rota.",
+      };
+    }
+
+    return {
+      value: probabilidade,
+      label: "Baixa" as const,
+      message:
+        "No cenário atual, seu objetivo pede ajustes de prazo, aporte ou alvo. O plano completo mostra os caminhos para aumentar a viabilidade.",
     };
   }
 }

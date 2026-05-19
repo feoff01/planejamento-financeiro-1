@@ -9,6 +9,16 @@ A Synapta deve parecer menos uma ferramenta que impressiona e mais uma instituic
 - Menos estetica de IA, mais private banking digital.
 - IA como bastidor de inteligencia, nao como linguagem visual principal.
 - Evitar excesso de cards, cards dentro de cards, glassmorphism pesado, bordas cinzas evidentes e brilhos decorativos.
+- Comportamento indesejado: card com bordas cinzas finas genericas. Quando um card for necessario, ele deve se sustentar por hierarquia, respiro, fundo ou contraste intencional, nao por uma linha cinza padrao ao redor.
+- Comportamento indesejado: sombras decorativas em cards de formulario/onboarding. Nesses fluxos, preferir composicao plana, espacamento e diferenca sutil de fundo; sombra so deve aparecer quando houver uma justificativa clara de camada, modal ou sobreposicao real.
+- Modais contextuais devem aparecer como sobreposicao real sobre a tela de destino, com o fundo escurecido. Nao criar uma tela intermediaria so para o modal e nunca colocar modal/card isolado dentro de outro card/container de pagina.
+- Modais fullscreen devem ser renderizados via portal em `document.body`, nao dentro da arvore visual do componente que os dispara.
+- Overlays fullscreen nao devem usar `backdrop-filter`, `backdrop-blur` ou filtros pesados por padrao. Preferir fundo solido/translucido simples para evitar travamento.
+- `position: fixed` dentro de ancestrais com `transform`, animacao ou filtros pode ficar preso ao container. Para cobrir a viewport real, usar portal.
+- Modal de aviso educativo deve ser direto, bloqueante apenas ate o usuario confirmar, e manter o conteudo principal ja carregado ao fundo para preservar contexto.
+- Layouts centralizados com `absolute`, `top-1/2` ou `translate-y-1/2` nunca podem conter conteudo de altura livre. Wizard centralizado nao deve usar scroll interno como solucao visual; etapas longas devem ser paginadas, segmentadas ou redesenhadas para caber no card.
+- Em formularios multi-etapa, validar visualmente a menor e a maior etapa. A etapa pequena pode ficar centralizada, mas a etapa longa nao pode vazar da viewport, criar scroll quebrado na pagina, esconder acoes principais ou depender de rolagem dentro do card.
+- Centralizar verticalmente exige controlar a altura real do conteudo, nao apenas aplicar CSS absoluto. Se uma etapa nao couber, a composicao da etapa deve mudar.
 - Usar composicao, tipografia, contraste e espaco como principais elementos de identidade.
 - Card deve existir quando tiver funcao clara: plano, depoimento, modulo repetido ou modal.
 - Priorizar telas com sensacao de ferramenta premium, nao template generico de SaaS.

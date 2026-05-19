@@ -105,6 +105,13 @@ export function Etapa1Form({ onNext }: Props) {
     setValue("aporte_mensal", valor);
   };
 
+  const handleAporteInputChange = (value: string) => {
+    hasUserAdjustedAporte.current = true;
+    const parsedValue = parseBRL(value) ?? 0;
+    const valor = Math.min(parsedValue, sobra);
+    setValue("aporte_mensal", valor, { shouldValidate: true });
+  };
+
   const onSubmit = (data: Etapa1Data) => onNext(data);
 
   return (
@@ -153,54 +160,46 @@ export function Etapa1Form({ onNext }: Props) {
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
-          className="space-y-6 rounded-[1.25rem] border border-blue-brand-950/10 bg-[#f7f3ea]/70 p-5"
+          className="space-y-3"
         >
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-[1fr_180px] sm:items-end">
             <div>
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-brand-950/40">
-                Capacidade mensal
-              </p>
-              <h3 className="font-editorial text-4xl leading-none text-blue-brand-950">
-                R$ {sobra.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-              </h3>
-            </div>
-            <div className="sm:text-right">
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-brand-950/40">
-                Aporte escolhido
-              </p>
-              <h3 className="font-editorial text-4xl leading-none text-primary-700">
-                R$ {aporte.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-              </h3>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-end justify-between gap-4">
-              <label className="text-sm font-semibold text-blue-brand-950/72">
-                Quanto desse valor você quer investir?
+              <label htmlFor="aporte_mensal_custom" className="text-sm font-semibold text-blue-brand-950/72">
+                Quanto da sua sobra mensal voce quer investir?
               </label>
-              <span className="text-lg font-bold text-primary-700">{porcentagemInvestimento}%</span>
+              <p className="mt-1 text-xs font-semibold text-blue-brand-950/45">{porcentagemInvestimento}% da sobra mensal</p>
             </div>
 
-            <input
-              type="range"
-              min="0"
-              max="100"
-              step="5"
-              value={porcentagemInvestimento}
-              onChange={(e) => handleSliderChange(Number(e.target.value))}
-              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-blue-brand-950/10 accent-primary-500"
-            />
-
-            <div className="flex justify-between text-[10px] font-bold uppercase tracking-[0.18em] text-blue-brand-950/35">
-              <span>0%</span>
-              <span>100%</span>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-blue-brand-950/40">
+                R$
+              </span>
+              <input
+                id="aporte_mensal_custom"
+                type="text"
+                inputMode="numeric"
+                value={formatToBRL(aporte)}
+                onChange={(e) => handleAporteInputChange(e.target.value)}
+                className={`${inputClass} pl-10 text-right font-semibold text-primary-700`}
+                placeholder="0"
+              />
             </div>
           </div>
 
-          <p className="text-xs leading-relaxed text-blue-brand-950/45">
-            O restante, R$ {(sobra - aporte).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}, pode permanecer para lazer, reserva ou ajustes de rotina.
-          </p>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            step="5"
+            value={porcentagemInvestimento}
+            onChange={(e) => handleSliderChange(Number(e.target.value))}
+            className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-blue-brand-950/10 accent-primary-500"
+          />
+
+          <div className="flex justify-between text-[10px] font-bold uppercase tracking-[0.18em] text-blue-brand-950/35">
+            <span>0%</span>
+            <span>100%</span>
+          </div>
         </motion.div>
       ) : (
         renda > 0 &&

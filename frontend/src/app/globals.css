@@ -15,7 +15,7 @@
   --color-primary-500: #C9A24B;
   --color-primary-600: #A8863A;
   
-  --color-background: #0B2545;
+  --color-background: #f7f3ea;
   --color-surface: #13315C;
   --color-surface-light: #1C4075;
   --color-border: rgba(229, 199, 126, 0.15);
@@ -35,8 +35,8 @@
 
 @layer base {
   :root {
-    --background: #0B2545;
-    --foreground: #ededed;
+    --background: #f7f3ea;
+    --foreground: #0B2545;
   }
 
   button,
@@ -51,12 +51,12 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), sans-serif;
   overflow-x: hidden;
 }
 
 .font-editorial {
-  font-family: "Editorial New", Georgia, "Times New Roman", serif;
+  font-family: var(--font-editorial), Georgia, "Times New Roman", serif;
 }
 
 .glass-panel {

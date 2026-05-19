@@ -1,41 +1,32 @@
 import { DiagnosticoCompleto } from "@/schemas/diagnosticoSchemas";
-import type { PlanoEspecifico } from "@/components/carteira-ideal/wizard/OutputEspecifico";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3333";
 
+type OutputGenericoTeaser = {
+  tempo_estimado_anos: number;
+  chance_sucesso: {
+    value: number | null;
+    label: "Alta" | "Moderada" | "Baixa" | "Indefinida";
+    message: string;
+  };
+  asset_groups: Array<{
+    key: "renda_fixa" | "renda_variavel" | "liquidez";
+    label: string;
+    assets: Array<{ id: string; label: string }>;
+  }>;
+};
+
 type DiagnosticoResponse = {
-  perfil: "conservador" | "moderado" | "arrojado";
-  pontos: number;
   alocacao: {
     renda_fixa: number;
-    acoes: number;
-    liquidez: number;
   };
-  alertas: string[];
   output_generico?: {
     status: "meta_critica" | "meta_apertada" | "plano_viavel" | "plano_forte";
     titulo: string;
     subtitulo: string;
     cta_label: string;
-  };
-  motor: {
-    portfolio: Record<string, number>;
-    rules_applied: unknown;
-    risk: {
-      mu: number;
-      sigma: number;
-      sharpe: number;
-      var_95: number;
-    };
-    simulation: {
-      prob_meta: number | null;
-      prob_perda_real: number;
-      prob_perda_nom: number;
-      aportado: number;
-      median: number;
-    };
-    analysis: PlanoEspecifico["analysis"];
+    teaser?: OutputGenericoTeaser;
   };
 };
 
