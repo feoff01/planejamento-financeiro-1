@@ -39,6 +39,8 @@
 - [ ] Variáveis de ambiente **nunca** no frontend (somente `NEXT_PUBLIC_` quando realmente necessário expor).
 - [ ] Nunca commitar arquivos `.env` — garantir que estão no `.gitignore`.
 - [ ] Segredos de API (OpenAI, etc.) ficam **somente no backend**.
+- [ ] Informacoes bloqueadas, borradas ou protegidas na UI **nunca** devem vir com valores reais no payload publico. Blur, CSS, `sr-only`, estado React e DevTools nao sao controle de acesso.
+- [ ] Outputs genericos/teasers devem retornar apenas dados publicamente exibiveis. Valores detalhados de carteira, aportes por objetivo, percentuais protegidos, ativos completos e projecoes reais ficam somente em endpoints autenticados/autorizados do plano completo.
 
 ---
 
@@ -80,4 +82,3 @@
 | CORS e headers configurados | ☐ |
 
 ---
-

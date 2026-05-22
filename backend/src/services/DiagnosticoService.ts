@@ -91,32 +91,38 @@ export class DiagnosticoService {
     };
 
     // Mapear objetivos detalhados para o formato do Motor
-    const riskLevel = perfil === "arrojado" ? "aggressive" : perfil === "moderado" ? "moderate" : "conservative";
-    const goals: Goal[] = Object.entries(dados.detalhes_objetivos || {}).map(([key, det]: [string, any]) => {
+    const riskLevel: Goal["risk"] = perfil === "arrojado" ? "aggressive" : perfil === "moderado" ? "moderate" : "conservative";
+    const goalsWithIds = Object.entries(dados.detalhes_objetivos || {}).map(([key, det]: [string, any]) => {
       const baseGoal = (dados.objetivos_selecionados || []).find((o: any) => o.id === key);
       return {
-        name: baseGoal ? baseGoal.label : key,
-        target: det.valor || 0,
-        years: det.horizonte_anos || 5,
-        risk: riskLevel,
-        priority: det.prioridade || 3,
-        nature: det.natureza === "need" ? "essential" as const : "aspirational" as const,
-        liquidity: (det.liquidez || "medium") as "low" | "medium" | "high",
+        id: key,
+        goal: {
+          name: baseGoal ? baseGoal.label : key,
+          target: det.valor || 0,
+          years: det.horizonte_anos || 5,
+          risk: riskLevel,
+          priority: det.prioridade || 3,
+          nature: det.natureza === "need" ? "essential" as const : "aspirational" as const,
+          liquidity: (det.liquidez || "medium") as "low" | "medium" | "high",
+        },
       };
     });
+    const goals: Goal[] = goalsWithIds.map((item) => item.goal);
 
     const view = Engine.DEFAULT_VIEW;
     const catalog = Engine.buildCatalog(view);
 
     let portfolio: any;
+    let individualPortfolios: any[] = [];
     let mainGoal = goals[0] || { name: "Crescimento", target: 0, years: 10, risk: riskLevel, priority: 3, nature: "aspirational" as const, liquidity: "medium" as const };
 
     if (goals.length > 1) {
-      const portfolios = goals.map(g => Engine.buildPortfolio(g, client, view, catalog));
-      portfolio = { alloc: Engine.consolidatePortfolios(portfolios, catalog) };
+      individualPortfolios = goals.map(g => Engine.buildPortfolio(g, client, view, catalog));
+      portfolio = { alloc: Engine.consolidatePortfolios(individualPortfolios, catalog) };
       mainGoal = goals.reduce((prev, curr) => (curr.priority > prev.priority ? curr : prev));
     } else {
       portfolio = Engine.buildPortfolio(mainGoal, client, view, catalog);
+      individualPortfolios = [portfolio];
     }
 
     const risk = Engine.portfolioRisk(portfolio.alloc, view, catalog);
@@ -126,6 +132,10 @@ export class DiagnosticoService {
     const outputGenericoBase = this.outputGenericoNarrative.build({
       probabilidade: sim.prob_meta,
     });
+    const aportePlan = this.buildPublicContributionPlan(
+      Engine.buildContributionPlan(goals.length > 0 ? goals : [mainGoal], client, individualPortfolios, view, catalog),
+      goalsWithIds
+    );
 
     // ═══════════════════════════════════════════════════════════════════════════
     // FASE 3: AGREGAR ALOCAÇÃO POR CLASSE (para o Output Genérico)
@@ -145,14 +155,15 @@ export class DiagnosticoService {
 
     // Converter para porcentagem inteira
     const alocacaoPercent = {
-      renda_fixa: Math.round(alocacaoAgregada.renda_fixa * 100),
+      liquidez: Math.round(alocacaoAgregada.liquidez * 100),
     };
     const outputGenerico = {
       ...outputGenericoBase,
       teaser: {
-        tempo_estimado_anos: mainGoal.years,
         chance_sucesso: this.buildChanceSucesso(sim.prob_meta),
+        aporte_plan: aportePlan,
         asset_groups: this.buildPublicAssetGroups(portfolio.alloc, catalog),
+        asset_explanations: this.buildPublicAssetExplanations(),
       },
     };
 
@@ -196,6 +207,27 @@ export class DiagnosticoService {
     }
 
     return [groups.renda_fixa, groups.renda_variavel, groups.liquidez];
+  }
+
+  private buildPublicContributionPlan(aportePlan: Engine.ContributionPlan, goalsWithIds: Array<{ id: string }>) {
+    return {
+      total_mensal: aportePlan.total_mensal,
+      goal_count: aportePlan.goal_count,
+      objetivos: aportePlan.objetivos.map((objetivo, index) => ({
+        id: goalsWithIds[index]?.id || `goal-${index}`,
+        goal_index: objetivo.goal_index,
+        goal_name: objetivo.goal_name,
+      })),
+    };
+  }
+
+  private buildPublicAssetExplanations() {
+    return {
+      enabled: true,
+      summary:
+        "A carteira combina liquidez, protecao e crescimento para equilibrar prazo, risco e objetivo.",
+      locked_count: 3,
+    };
   }
 
   private buildChanceSucesso(probabilidade: number | null) {

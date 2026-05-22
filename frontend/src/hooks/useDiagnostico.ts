@@ -11,11 +11,24 @@ import {
 type DiagnosticoState = Partial<DiagnosticoCompleto>;
 
 type OutputGenericoTeaser = {
-  tempo_estimado_anos: number;
   chance_sucesso: {
     value: number | null;
     label: "Alta" | "Moderada" | "Baixa" | "Indefinida";
     message: string;
+  };
+  aporte_plan?: {
+    total_mensal: number;
+    goal_count: number;
+    objetivos: Array<{
+      id?: string;
+      goal_index: number;
+      goal_name: string;
+    }>;
+  };
+  asset_explanations?: {
+    enabled: boolean;
+    summary: string;
+    locked_count: number;
   };
   asset_groups: Array<{
     key: "renda_fixa" | "renda_variavel" | "liquidez";
@@ -26,7 +39,7 @@ type OutputGenericoTeaser = {
 
 type ResultadoDiagnostico = {
   alocacao: {
-    renda_fixa: number;
+    liquidez: number;
   };
   output_generico?: {
     status: "meta_critica" | "meta_apertada" | "plano_viavel" | "plano_forte";

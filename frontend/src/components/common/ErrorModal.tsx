@@ -8,9 +8,10 @@ type Props = {
   message: string | null;
   onClose: () => void;
   onRetry?: () => void;
+  closeLabel?: string;
 };
 
-export function ErrorModal({ isOpen, message, onClose, onRetry }: Props) {
+export function ErrorModal({ isOpen, message, onClose, onRetry, closeLabel = "Fechar" }: Props) {
   // Tradução de erros técnicos para mensagens amigáveis
   const getFriendlyMessage = (msg: string | null) => {
     if (!msg) return "";
@@ -67,7 +68,7 @@ export function ErrorModal({ isOpen, message, onClose, onRetry }: Props) {
                     onClick={onClose}
                     className={`flex-1 py-3 rounded-xl font-bold text-sm border border-blue-brand-800 text-zinc-400 hover:text-white transition-colors ${!onRetry ? 'w-full' : ''}`}
                   >
-                    Fechar
+                    {closeLabel}
                   </button>
                 </div>
               </div>

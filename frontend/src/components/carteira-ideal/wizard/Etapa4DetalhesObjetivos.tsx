@@ -132,21 +132,18 @@ export function Etapa4DetalhesObjetivos({ onNext, onBack, objetivos = [] }: Prop
                 render={({ field: { onChange, value } }) => {
                   const formatDisplay = (val: number | undefined) => {
                     const v = val || 0;
-                    return v.toLocaleString("pt-BR", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    });
+                    return v.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
                   };
 
                   return (
                     <input
                       type="text"
                       inputMode="numeric"
-                      placeholder="0,00"
+                      placeholder="0"
                       value={formatDisplay(value)}
                       onChange={(e) => {
                         const raw = e.target.value.replace(/\D/g, "");
-                        onChange(Number(raw) / 100);
+                        onChange(Number(raw));
                       }}
                       className={`${inputClass} pl-10`}
                     />

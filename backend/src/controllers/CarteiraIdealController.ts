@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
+import { CarteiraIdealService } from "../services/CarteiraIdealService";
 
 export class CarteiraIdealController {
+  private service = new CarteiraIdealService();
+
   generate = async (req: Request, res: Response): Promise<void> => {
     try {
       const user = (req as any).user;
@@ -9,12 +12,14 @@ export class CarteiraIdealController {
         return;
       }
 
-      res.status(403).json({
-        error: "Plano completo protegido. Assinatura necessária para acessar a carteira detalhada.",
-      });
+      const token = req.cookies?.sb_token;
+      const goalInput = req.body?.goals ?? req.body?.goal ?? req.body ?? {};
+      const data = await this.service.generate(user.id, goalInput, token);
+
+      res.status(200).json({ data });
     } catch (error: any) {
       console.error("[CarteiraIdealController] generate error:", error);
-      res.status(500).json({ error: "Erro interno ao validar acesso ao plano completo." });
+      res.status(500).json({ error: "Erro interno ao gerar o plano completo." });
     }
   };
 }

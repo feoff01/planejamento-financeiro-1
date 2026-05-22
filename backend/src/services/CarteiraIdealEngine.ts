@@ -97,6 +97,24 @@ export function assetClassLabel(assetId: string, asset: Asset): string {
   return asset.cat;
 }
 
+export function assetRole(assetId: string, asset: Asset, goal: Goal): string {
+  if (asset.cat === 'selic') return 'Reserva e liquidez imediata';
+  if (asset.cat === 'ipca') {
+    if (asset.label.toLowerCase().includes('princ')) {
+      return `Ancora real para proteger contra inflacao ate ${asset.anos.toFixed(0)}a`;
+    }
+    return `Protecao real de longo prazo (${asset.anos.toFixed(0)}a)`;
+  }
+  if (asset.cat === 'prefixado') {
+    return `Trava nominal de ${asset.anos.toFixed(0)}a para cenarios de queda de juros`;
+  }
+  if (asset.cat === 'equity') {
+    if (assetId.includes('dividend')) return 'Renda recorrente via dividendos';
+    return goal.years >= 8 ? 'Crescimento real de longo prazo' : 'Parcela de crescimento controlada';
+  }
+  return 'Papel complementar na carteira';
+}
+
 export function buildCovMatrix(assetIds: string[], catalog: Record<string, Asset>): number[][] {
   const n = assetIds.length;
   const Sigma: number[][] = Array(n).fill(0).map(() => Array(n).fill(0));
@@ -884,6 +902,175 @@ export function consolidatePortfolios(results: any[], catalog: Record<string, As
   }
 
   return cleanW(consolidated, catalog);
+}
+
+type ContributionFactors = {
+  priority: number;
+  urgency: number;
+  nature: number;
+  liquidity: number;
+};
+
+export type ContributionAssetAllocation = {
+  id: string;
+  label: string;
+  percentual: number;
+  aporte_mensal: number;
+};
+
+export type ContributionGoalAllocation = {
+  goal_index: number;
+  goal_name: string;
+  aporte_mensal: number;
+  aporte_necessario_mensal: number;
+  percentual: number;
+  cobertura: number | null;
+  prioridade: number;
+  fatores: ContributionFactors;
+  ativos: ContributionAssetAllocation[];
+};
+
+export type ContributionPlan = {
+  total_mensal: number;
+  ideal_mensal: number;
+  goal_count: number;
+  objetivos: ContributionGoalAllocation[];
+};
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function roundMoney(value: number): number {
+  return Number((Math.max(value, 0)).toFixed(2));
+}
+
+function roundSignedMoney(value: number): number {
+  return Number(value.toFixed(2));
+}
+
+function contributionFactors(goal: Goal): ContributionFactors {
+  return {
+    priority: 0.75 + goal.priority * 0.25,
+    urgency: clamp(1 + (8 - goal.years) / 12, 0.65, 1.75),
+    nature: goal.nature === 'essential' ? 1.35 : 1.0,
+    liquidity: goal.liquidity === 'high' ? 1.12 : goal.liquidity === 'low' ? 0.95 : 1.0,
+  };
+}
+
+function factorProduct(factors: ContributionFactors): number {
+  return factors.priority * factors.urgency * factors.nature * factors.liquidity;
+}
+
+function monthlyNeededForGoal(goal: Goal, savingsShare: number, annualReturn: number, safetyMargin = 1.05): number {
+  if (!goal.target || goal.target <= 0) return 0;
+
+  const nMonths = Math.max(1, Math.round(goal.years * 12));
+  const monthlyReturn = annualReturn > -0.99 ? Math.pow(1 + Math.max(annualReturn, 0), 1 / 12) - 1 : 0;
+  const target = goal.target * safetyMargin;
+  const futureSavings = savingsShare * Math.pow(1 + monthlyReturn, nMonths);
+  const remaining = target - futureSavings;
+
+  if (remaining <= 0) return 0;
+
+  const annuityFactor = monthlyReturn > 0
+    ? (Math.pow(1 + monthlyReturn, nMonths) - 1) / monthlyReturn
+    : nMonths;
+
+  return remaining / Math.max(annuityFactor, 1);
+}
+
+export function buildContributionPlan(
+  goals: Goal[],
+  client: Client,
+  portfolios: Array<{ alloc: Record<string, number> }>,
+  view: MarketAssumptions,
+  catalog: Record<string, Asset>
+): ContributionPlan {
+  const totalMonthly = roundMoney(client.monthly || 0);
+  const activeGoals: Goal[] = goals.length > 0 ? goals : [{
+    name: 'Crescimento',
+    target: 0,
+    years: 10,
+    risk: 'aggressive' as const,
+    priority: 3,
+    nature: 'aspirational' as const,
+    liquidity: 'medium' as const,
+  }];
+
+  const baseScores = activeGoals.map((goal) => {
+    const factors = contributionFactors(goal);
+    const targetBasis = goal.target > 0 ? goal.target : 1;
+    return targetBasis * factorProduct(factors);
+  });
+  const baseTotal = baseScores.reduce((sum, value) => sum + value, 0) || activeGoals.length;
+
+  const drafts = activeGoals.map((goal, index) => {
+    const portfolio = portfolios[index] || portfolios[0] || { alloc: {} };
+    const risk = portfolioRisk(portfolio.alloc, view, catalog);
+    const savingsShare = client.savings * ((baseScores[index] || 1) / baseTotal);
+    const needed = monthlyNeededForGoal(goal, savingsShare, risk.mu);
+    const factors = contributionFactors(goal);
+    const fallbackNeed = goal.target > 0
+      ? (goal.target / Math.max(goal.years * 12, 1)) * 0.05
+      : 1;
+    const decisionNeed = Math.max(needed, fallbackNeed);
+    const score = decisionNeed * factorProduct(factors);
+
+    return {
+      goal,
+      index,
+      portfolio,
+      factors,
+      needed,
+      score,
+    };
+  });
+
+  const scoreTotal = drafts.reduce((sum, item) => sum + item.score, 0) || drafts.length;
+  const rawAllocations = drafts.map((item) => totalMonthly * (item.score / scoreTotal));
+  const roundedAllocations = rawAllocations.map(roundMoney);
+  const roundedTotal = roundMoney(roundedAllocations.reduce((sum, value) => sum + value, 0));
+  const diff = roundSignedMoney(totalMonthly - roundedTotal);
+
+  if (roundedAllocations.length > 0 && diff !== 0) {
+    let adjustmentIndex = 0;
+    for (let index = 1; index < rawAllocations.length; index++) {
+      if (rawAllocations[index] > rawAllocations[adjustmentIndex]) adjustmentIndex = index;
+    }
+    roundedAllocations[adjustmentIndex] = roundMoney(roundedAllocations[adjustmentIndex] + diff);
+  }
+
+  const objetivos = drafts.map((item, index): ContributionGoalAllocation => {
+    const monthly = roundedAllocations[index] || 0;
+    const assets = Object.entries(item.portfolio.alloc)
+      .sort(([, a], [, b]) => b - a)
+      .map(([id, weight]) => ({
+        id,
+        label: catalog[id]?.label || id,
+        percentual: Number(((weight as number) * 100).toFixed(2)),
+        aporte_mensal: roundMoney(monthly * (weight as number)),
+      }));
+
+    return {
+      goal_index: item.index,
+      goal_name: item.goal.name,
+      aporte_mensal: monthly,
+      aporte_necessario_mensal: roundMoney(item.needed),
+      percentual: totalMonthly > 0 ? Number(((monthly / totalMonthly) * 100).toFixed(2)) : 0,
+      cobertura: item.needed > 0 ? Number((monthly / item.needed).toFixed(3)) : null,
+      prioridade: item.goal.priority,
+      fatores: item.factors,
+      ativos: assets,
+    };
+  });
+
+  return {
+    total_mensal: totalMonthly,
+    ideal_mensal: roundMoney(drafts.reduce((sum, item) => sum + item.needed, 0)),
+    goal_count: activeGoals.length,
+    objetivos,
+  };
 }
 
 // ---- SECTION 8: RISK ENGINE ----
