@@ -1,10 +1,10 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { CarteiraIdealController } from "../controllers/CarteiraIdealController";
+import { PlanoIdealController } from "../controllers/PlanoIdealController";
 import { authMiddleware } from "../middlewares/authMiddleware";
 
-const carteiraIdealRouter = Router();
-const controller = new CarteiraIdealController();
+const planoIdealRouter = Router();
+const controller = new PlanoIdealController();
 
 // Rate limit específico para simulações (processamento pesado de Monte Carlo)
 const sim_limiter = rateLimit({
@@ -15,12 +15,13 @@ const sim_limiter = rateLimit({
   legacyHeaders: false,
 });
 
-// A rota será POST /api/carteira-ideal/generate
-carteiraIdealRouter.post(
+// A rota principal sera POST /api/plano-ideal/generate.
+// /api/plano-ideal/generate fica como alias temporario para compatibilidade.
+planoIdealRouter.post(
   "/generate",
   sim_limiter,
   authMiddleware,
   (req, res) => controller.generate(req, res)
 );
 
-export { carteiraIdealRouter };
+export { planoIdealRouter };

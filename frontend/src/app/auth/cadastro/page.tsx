@@ -12,7 +12,7 @@ import { CadastroFormData, CadastroSchema } from "@/schemas/authSchemas";
 
 const benefits = [
   "Diagnóstico personalizado da sua vida financeira",
-  "Carteira ideal alinhada a objetivo, prazo e risco",
+  "Plano ideal alinhado a objetivo, prazo e risco",
   "Comece grátis, sem cartão",
 ];
 

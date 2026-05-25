@@ -3,11 +3,11 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 
-import { DiagnosticoWizard } from "@/components/carteira-ideal/DiagnosticoWizard";
+import { DiagnosticoWizard } from "@/components/plano-ideal/DiagnosticoWizard";
 import { MobileNav } from "@/components/dashboard/MobileNav";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 
-export default function DashboardPage() {
+export default function PlanoIdealPage() {
   const [isResultadoVisible, setIsResultadoVisible] = useState(false);
 
   return (

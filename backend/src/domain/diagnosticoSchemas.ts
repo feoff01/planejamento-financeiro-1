@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const VALOR_MINIMO_OBJETIVO = 500;
+
 export const DiagnosticoSchema = z.object({
   // Etapa 1
   idade: z.number().min(18).max(100),
@@ -22,7 +24,7 @@ export const DiagnosticoSchema = z.object({
   detalhes_objetivos: z.record(
     z.string(),
     z.object({
-      valor: z.number().min(0),
+      valor: z.number().min(VALOR_MINIMO_OBJETIVO),
       horizonte_anos: z.number().min(1).max(50),
       natureza: z.enum(["need", "want"]),
       liquidez: z.enum(["low", "medium", "high"]),

@@ -1,5 +1,5 @@
 /**
- * CarteiraIdealService (Frontend)
+ * PlanoIdealService (Frontend)
  * Responsável por chamar a API do Motor Financeiro Institucional.
  */
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3333";
@@ -45,7 +45,7 @@ type ContributionPlan = {
   }>;
 };
 
-export type CarteiraIdealResponse = {
+export type PlanoIdealResponse = {
   goals?: Array<{
     goal_index: number;
     name: string;
@@ -112,17 +112,17 @@ export type CarteiraIdealResponse = {
 };
 
 type ApiResponse = {
-  data?: CarteiraIdealResponse;
+  data?: PlanoIdealResponse;
   error?: string;
 };
 
-export const CarteiraIdealService = {
+export const PlanoIdealService = {
   /**
    * Dispara a simulação de Monte Carlo e geração de alocação específica.
    */
   async gerar(goal: GoalPayload | GoalPayload[]) {
     const goals = Array.isArray(goal) ? goal : [goal];
-    const response = await fetch(`${BACKEND_URL}/api/carteira-ideal/generate`, {
+    const response = await fetch(`${BACKEND_URL}/api/plano-ideal/generate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -134,13 +134,13 @@ export const CarteiraIdealService = {
     const result = (await response.json()) as ApiResponse;
 
     if (!response.ok) {
-      const error = new Error(result.error || "Erro ao gerar a carteira ideal.") as Error & { status?: number };
+      const error = new Error(result.error || "Erro ao gerar o Plano Ideal.") as Error & { status?: number };
       error.status = response.status;
       throw error;
     }
 
     if (!result.data) {
-      throw new Error("Resposta inválida ao gerar a carteira ideal.");
+      throw new Error("Resposta inválida ao gerar o Plano Ideal.");
     }
 
     return result.data;

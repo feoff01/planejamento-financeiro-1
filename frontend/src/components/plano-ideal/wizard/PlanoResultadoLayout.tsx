@@ -554,8 +554,8 @@ function GrowthProjectionPreview({ mode, data }: { mode: PlanoMode; data: PlanoG
         </div>
         <p className="max-w-2xl text-xs leading-relaxed text-white/50">
           {locked
-            ? "A projeção completa mostra como aporte, patrimônio e retorno esperado se combinam ao longo do tempo."
-            : "A projeção mostra como aporte, patrimônio e retorno esperado se combinam ao longo do tempo."}
+            ? "A projeção completa mostra como aporte mensal e retorno esperado se combinam ao longo do tempo."
+            : "A projeção mostra como aporte mensal e retorno esperado se combinam ao longo do tempo."}
         </p>
       </div>
 

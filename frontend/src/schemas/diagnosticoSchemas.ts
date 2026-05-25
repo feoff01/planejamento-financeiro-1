@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const VALOR_MINIMO_OBJETIVO = 500;
+
 // ── Etapa 1: Renda & Gastos ──────────────────────────────────────────────────
 export const Etapa1Schema = z.object({
   idade: z
@@ -44,7 +46,9 @@ export const Etapa4Schema = z.object({
   detalhes_objetivos: z.record(
     z.string(),
     z.object({
-      valor: z.number({ message: "Informe um valor." }).min(0, "Valor não pode ser negativo"),
+      valor: z
+        .number({ message: "Informe um valor." })
+        .min(VALOR_MINIMO_OBJETIVO, "O valor mínimo por objetivo é R$ 500."),
       horizonte_anos: z.number().min(1, "Mínimo 1 ano.").max(50, "Máximo 50 anos."),
       natureza: z.enum(["need", "want"]),
       liquidez: z.enum(["low", "medium", "high"]),

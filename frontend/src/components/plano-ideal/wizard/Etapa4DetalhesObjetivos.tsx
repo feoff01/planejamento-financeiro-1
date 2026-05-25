@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
-import { Etapa4Data, Etapa4Schema } from "@/schemas/diagnosticoSchemas";
+import { Etapa4Data, Etapa4Schema, VALOR_MINIMO_OBJETIVO } from "@/schemas/diagnosticoSchemas";
 
 type Props = {
   onNext: (data: Etapa4Data) => void;
@@ -139,7 +139,7 @@ export function Etapa4DetalhesObjetivos({ onNext, onBack, objetivos = [] }: Prop
                     <input
                       type="text"
                       inputMode="numeric"
-                      placeholder="0"
+                      placeholder={String(VALOR_MINIMO_OBJETIVO)}
                       value={formatDisplay(value)}
                       onChange={(e) => {
                         const raw = e.target.value.replace(/\D/g, "");

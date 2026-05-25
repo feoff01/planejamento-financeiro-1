@@ -14,7 +14,8 @@ export function middleware(request: NextRequest) {
 
   // 1. Proteger rotas privadas (Route Guard)
   const isProtectedRoute = request.nextUrl.pathname.startsWith('/dashboard') || 
-                           request.nextUrl.pathname.startsWith('/carteira-ideal');
+                           request.nextUrl.pathname.startsWith('/plano-ideal') ||
+                           request.nextUrl.pathname.startsWith('/plano-ideal');
   
   if (isProtectedRoute && !token) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
@@ -23,7 +24,7 @@ export function middleware(request: NextRequest) {
   // 2. Prevenir acesso a rotas públicas quando já logado
   if (request.nextUrl.pathname.startsWith('/auth/login') || request.nextUrl.pathname.startsWith('/auth/cadastro')) {
     if (token) {
-      return NextResponse.redirect(new URL('/carteira-ideal', request.url));
+      return NextResponse.redirect(new URL('/plano-ideal', request.url));
     }
   }
 
@@ -34,7 +35,8 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
-    '/carteira-ideal/:path*',
+    '/plano-ideal/:path*',
+    '/plano-ideal/:path*',
     '/auth/login',
     '/auth/cadastro'
   ],

@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { CarteiraIdealService } from "../services/CarteiraIdealService";
+import { PlanoIdealService } from "../services/PlanoIdealService";
 
-export class CarteiraIdealController {
-  private service = new CarteiraIdealService();
+export class PlanoIdealController {
+  private service = new PlanoIdealService();
 
   generate = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -18,7 +18,11 @@ export class CarteiraIdealController {
 
       res.status(200).json({ data });
     } catch (error: any) {
-      console.error("[CarteiraIdealController] generate error:", error);
+      console.error("[PlanoIdealController] generate error:", error);
+      if (error?.statusCode) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
       res.status(500).json({ error: "Erro interno ao gerar o plano completo." });
     }
   };

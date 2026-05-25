@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { CarteiraIdealService, type GoalPayload } from "@/services/carteira/CarteiraIdealService";
+import { PlanoIdealService, type GoalPayload } from "@/services/carteira/PlanoIdealService";
 import type { DiagnosticoCompleto } from "@/schemas/diagnosticoSchemas";
 import { useDiagnostico } from "@/hooks/useDiagnostico";
 import { ErrorModal } from "../common/ErrorModal";
@@ -33,7 +33,7 @@ const STEP_COPY: Record<number, { title: string; desc: string }> = {
   },
   2: {
     title: "Defina seu ponto de partida.",
-    desc: "Seu patrimônio atual ajuda a calibrar a rota de crescimento.",
+    desc: "Seu patrimônio atual fica registrado para futuras análises, sem abater os objetivos deste plano.",
   },
   3: {
     title: "Escolha os objetivos que importam.",
@@ -45,7 +45,7 @@ const STEP_COPY: Record<number, { title: string; desc: string }> = {
   },
   5: {
     title: "Calibre sua relação com risco.",
-    desc: "A carteira ideal precisa caber também no seu comportamento em momentos difíceis.",
+    desc: "O Plano Ideal precisa caber também no seu comportamento em momentos difíceis.",
   },
 };
 
@@ -193,7 +193,7 @@ export function DiagnosticoWizard({ onResultadoVisibleChange }: Props) {
     setUnlockError(null);
 
     try {
-      const plano = await CarteiraIdealService.gerar(buildGoalsPayload(dados));
+      const plano = await PlanoIdealService.gerar(buildGoalsPayload(dados));
       setPlanoEspecifico(plano as PlanoEspecifico);
     } catch (err: unknown) {
       const message = getErrorMessage(err, "Nao foi possivel gerar o plano completo. Tente novamente.");

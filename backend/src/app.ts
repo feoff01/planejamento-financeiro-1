@@ -4,7 +4,7 @@ import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import { authRouter } from "./routes/authRoutes";
 import { diagnosticoRouter } from "./routes/diagnosticoRoutes";
-import { carteiraIdealRouter } from "./routes/carteiraIdealRoutes";
+import { planoIdealRouter } from "./routes/planoIdealRoutes";
 
 const app = express();
 
@@ -24,7 +24,8 @@ app.use(express.json({ limit: "10kb" }));
 // 4. Montar Rotas (Isolamento Arquitetural)
 app.use("/api/auth", authRouter);
 app.use("/api/user/diagnostico", diagnosticoRouter);
-app.use("/api/carteira-ideal", carteiraIdealRouter);
+app.use("/api/plano-ideal", planoIdealRouter);
+app.use("/api/plano-ideal", planoIdealRouter);
 
 // Rota fallback genérica de checagem
 app.get("/health", (req, res) => {

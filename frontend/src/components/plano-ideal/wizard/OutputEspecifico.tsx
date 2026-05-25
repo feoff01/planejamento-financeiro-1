@@ -124,7 +124,7 @@ export function OutputEspecifico({ plano }: Props) {
         icon: PLANO_RESULT_ICONS.CalendarClock,
         label: "Tempo estimado",
         value: plano.tempo_estimado?.label ?? "Prazo não informado",
-        desc: "Prazo estimado para concluir todos os objetivos, considerando aporte, patrimônio e retorno esperado.",
+        desc: "Prazo estimado para concluir todos os objetivos, considerando aporte mensal e retorno esperado.",
       },
       {
         icon: PLANO_RESULT_ICONS.Target,

@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 dotenv.config();
 
-export class CarteiraIdealRepository {
+export class PlanoIdealRepository {
   private getClient(token: string) {
     return createClient(
       process.env.SUPABASE_URL || "",
@@ -36,7 +36,7 @@ export class CarteiraIdealRepository {
       ]);
 
     if (error) {
-      console.error("[CarteiraIdealRepository] saveSnapshot error:", error.message);
+      console.error("[PlanoIdealRepository] saveSnapshot error:", error.message);
       // Not throwing error to avoid blocking the user flow if the table isn't fully created yet in Supabase.
       // throw new Error("DATABASE_ERROR");
     }
@@ -52,7 +52,7 @@ export class CarteiraIdealRepository {
       .single();
 
     if (error) {
-      console.error("[CarteiraIdealRepository] getClientData error:", error.message);
+      console.error("[PlanoIdealRepository] getClientData error:", error.message);
       throw new Error("DATABASE_ERROR");
     }
 

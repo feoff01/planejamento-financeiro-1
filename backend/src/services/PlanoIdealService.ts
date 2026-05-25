@@ -1,6 +1,6 @@
-import { CarteiraIdealRepository } from "../repositories/CarteiraIdealRepository";
-import * as Engine from "./CarteiraIdealEngine";
-import { Asset, Client, Goal, MarketAssumptions } from "../domain/carteiraIdealSchemas";
+import { PlanoIdealRepository } from "../repositories/PlanoIdealRepository";
+import * as Engine from "./PlanoIdealEngine";
+import { Asset, Client, Goal, MarketAssumptions } from "../domain/planoIdealSchemas";
 
 type AssetGroupKey = "renda_fixa" | "renda_variavel" | "liquidez";
 
@@ -31,11 +31,13 @@ type GrowthProjectionPoint = {
   projetado: number;
 };
 
-export class CarteiraIdealService {
-  private repository: CarteiraIdealRepository;
+const VALOR_MINIMO_OBJETIVO = 500;
+
+export class PlanoIdealService {
+  private repository: PlanoIdealRepository;
 
   constructor() {
-    this.repository = new CarteiraIdealRepository();
+    this.repository = new PlanoIdealRepository();
   }
 
   private assetGroupKey(asset: Asset): AssetGroupKey {
@@ -129,7 +131,7 @@ export class CarteiraIdealService {
   }
 
   private formatTimeEstimateLabel(months: number): string {
-    if (months <= 0) return "Objetivo já atingido";
+    if (months <= 0) return "Menos de 1 mês";
     if (months < 12) return months === 1 ? "1 mês" : `${months} meses`;
 
     const years = Math.ceil(months / 12);
@@ -180,23 +182,14 @@ export class CarteiraIdealService {
       nature: "aspirational" as const,
       liquidity: "medium" as const,
     }];
-    const contributionTotal = contributionPlan.objetivos.reduce((sum, objetivo) => sum + objetivo.aporte_mensal, 0);
-    const targetTotal = activeGoals.reduce((sum, goal) => sum + Math.max(goal.target || 0, 0), 0);
-
     const estimates = activeGoals
       .map((goal, index) => {
         const contribution = contributionPlan.objetivos.find((item) => item.goal_index === index);
         const monthlyShare = contribution?.aporte_mensal ?? (client.monthly || 0) / activeGoals.length;
-        const savingsWeight = contributionTotal > 0
-          ? monthlyShare / contributionTotal
-          : targetTotal > 0
-          ? Math.max(goal.target || 0, 0) / targetTotal
-          : 1 / activeGoals.length;
-        const initialShare = (client.savings || 0) * savingsWeight;
         const portfolio = portfolios[index] || portfolios[0] || { alloc: {} };
         const goalRisk = Engine.portfolioRisk(portfolio.alloc, view, catalog);
 
-        return this.estimateTimeToTarget(goal.target, initialShare, monthlyShare, goalRisk.mu);
+        return this.estimateTimeToTarget(goal.target, 0, monthlyShare, goalRisk.mu);
       })
       .filter((estimate): estimate is NonNullable<TimeEstimate> => estimate !== null);
 
@@ -209,7 +202,7 @@ export class CarteiraIdealService {
     const horizon = Math.max(1, Math.min(50, Math.ceil(estimate?.years || goal.years || 1)));
     const monthlyReturn = Math.pow(1 + Math.max(annualReturn, 0), 1 / 12) - 1;
     const projection: GrowthProjectionPoint[] = [];
-    let projected = client.savings || 0;
+    let projected = 0;
 
     projection.push({
       ano: 0,
@@ -224,7 +217,7 @@ export class CarteiraIdealService {
 
       projection.push({
         ano: year,
-        aportado: Number(((client.savings || 0) + (client.monthly || 0) * year * 12).toFixed(2)),
+        aportado: Number(((client.monthly || 0) * year * 12).toFixed(2)),
         projetado: Number(projected.toFixed(2)),
       });
     }
@@ -247,7 +240,8 @@ export class CarteiraIdealService {
       age: clientData.idade || 30,
       income: clientData.renda_mensal || 0,
       expenses: clientData.gastos_mensais || 0,
-      savings: clientData.patrimonio_total || 0,
+      // Patrimonio atual fica salvo como contexto, mas nao abate objetivos do Plano Ideal.
+      savings: 0,
       monthly: clientData.aporte_mensal || 0,
       goals: [],
     };
@@ -256,12 +250,18 @@ export class CarteiraIdealService {
     const inputs = rawInputs.length > 0 ? rawInputs : [{}];
     
     const goals: Goal[] = inputs.map(input => {
+      const target = input.target ?? 1000000;
+      if (target < VALOR_MINIMO_OBJETIVO) {
+        const error = new Error("O valor mínimo por objetivo é R$ 500.");
+        (error as any).statusCode = 422;
+        throw error;
+      }
       const riskLevel = input.risk === 'ultra_aggressive' ? 'ultra_aggressive' :
                         input.risk === 'aggressive' ? 'aggressive' :
                         input.risk === 'conservative' ? 'conservative' : 'moderate';
       return {
         name: input.name || "Aposentadoria",
-        target: input.target || 1000000,
+        target,
         years: input.years || 20,
         risk: riskLevel,
         priority: input.priority || 3,

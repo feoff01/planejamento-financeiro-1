@@ -4,6 +4,7 @@ import {
   Calculator,
   ChartNoAxesCombined,
   CreditCard,
+  Activity,
   LayoutDashboard,
   LifeBuoy,
   LucideIcon,
@@ -22,7 +23,8 @@ export type NavItem = {
 };
 
 export const navigationItems: NavItem[] = [
-  { icon: Target, label: "Carteira Ideal", locked: false, href: "/carteira-ideal" },
+  { icon: Target, label: "Plano Ideal", locked: false, href: "/plano-ideal" },
+  { icon: Activity, label: "Meu acompanhamento", locked: false, href: "/meu-acompanhamento" },
   { icon: LayoutDashboard, label: "Dashboard", locked: true },
   { icon: Wallet, label: "Minha Carteira", locked: true },
   { icon: Briefcase, label: "Carteira Recomendada", locked: true },

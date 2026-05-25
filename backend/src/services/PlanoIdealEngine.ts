@@ -1,5 +1,5 @@
 import * as math from 'mathjs';
-import { MarketAssumptions, Asset, Goal, Client } from '../domain/carteiraIdealSchemas';
+import { MarketAssumptions, Asset, Goal, Client } from '../domain/planoIdealSchemas';
 
 // Helper Random functions
 function standardNormal(): number {

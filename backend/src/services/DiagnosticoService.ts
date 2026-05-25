@@ -1,8 +1,8 @@
 import { DiagnosticoInput } from "../domain/diagnosticoSchemas";
 import { DiagnosticoRepository } from "../repositories/DiagnosticoRepository";
-import { CarteiraIdealRepository } from "../repositories/CarteiraIdealRepository";
-import * as Engine from "./CarteiraIdealEngine";
-import { Asset, Client, Goal } from "../domain/carteiraIdealSchemas";
+import { PlanoIdealRepository } from "../repositories/PlanoIdealRepository";
+import * as Engine from "./PlanoIdealEngine";
+import { Asset, Client, Goal } from "../domain/planoIdealSchemas";
 import { OutputGenericoNarrativeService } from "./OutputGenericoNarrativeService";
 
 type Perfil = "conservador" | "moderado" | "arrojado";
@@ -36,12 +36,12 @@ const PONTOS_RISCO: Record<string, number> = {
  */
 export class DiagnosticoService {
   private repo: DiagnosticoRepository;
-  private carteiraRepo: CarteiraIdealRepository;
+  private carteiraRepo: PlanoIdealRepository;
   private outputGenericoNarrative: OutputGenericoNarrativeService;
 
   constructor() {
     this.repo = new DiagnosticoRepository();
-    this.carteiraRepo = new CarteiraIdealRepository();
+    this.carteiraRepo = new PlanoIdealRepository();
     this.outputGenericoNarrative = new OutputGenericoNarrativeService();
   }
 
@@ -69,7 +69,7 @@ export class DiagnosticoService {
       pontos <= 3 ? "conservador" : pontos <= 7 ? "moderado" : "arrojado";
 
     // Gerar alertas personalizados. Reserva de emergência é tratada apenas como
-    // disclaimer no frontend e não altera o produto Carteira Ideal no MVP.
+    // disclaimer no frontend e nao altera o produto Plano Ideal no MVP.
     const alertas: string[] = [];
 
     // Persistir diagnóstico no banco
@@ -85,7 +85,8 @@ export class DiagnosticoService {
       age: (dados as any).idade || 30,
       income: dados.renda_mensal || 0,
       expenses: dados.gastos_mensais || 0,
-      savings: dados.patrimonio_total || 0,
+      // Patrimonio atual fica salvo como contexto, mas nao abate objetivos do Plano Ideal.
+      savings: 0,
       monthly: (dados as any).aporte_mensal || 0,
       goals: [],
     };
