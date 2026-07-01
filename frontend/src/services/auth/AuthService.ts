@@ -2,59 +2,57 @@ import { LoginFormData, CadastroFormData } from "@/schemas/authSchemas";
 
 /**
  * AuthService
- * 
- * Este serviço pertence ao Frontend e atua APENAS como uma ponte de comunicação.
- * Ele pega os dados capturados nas telas (já validados pelo Zod) e dispara uma
- * requisição HTTP. 
- * O banco de dados (Supabase) e as lógicas de segurança ficam 100% no Backend.
+ *
+ * Este serviço pertence ao Frontend e atua APENAS como ponte de comunicação
+ * com o Backend.
  */
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3333";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:3333";
 
 export const AuthService = {
-  /**
-   * Envia as credenciais para a rota de login do Backend real.
-   */
   async signIn(data: LoginFormData) {
     const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+      }),
       credentials: "include",
     });
 
     const result = await response.json();
 
     if (!response.ok) {
-      // Repassando a mensagem tratada e limpa enviada pelo Backend.
-      throw new Error(result.error || "Falha ao entrar de comunicar com o servidor.");
+      throw new Error(result.error || "Não foi possível entrar.");
     }
 
-    return result; // Retorna { user }
+    return result;
   },
 
-  /**
-   * Envia os dados de criacão para a rota de cadastro no Backend real.
-   */
   async signUp(data: CadastroFormData) {
     const response = await fetch(`${BACKEND_URL}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        nome: data.nome,
+        email: data.email,
+        password: data.password,
+      }),
       credentials: "include",
     });
 
     const result = await response.json();
 
     if (!response.ok) {
-      throw new Error(result.error || "Ocorreu um erro ao criar sua conta.");
+      throw new Error(result.error || "Não foi possível criar sua conta.");
     }
 
-    return result; // Retorna { user }
+    return result;
   },
 
-  /**
-   * Comunica o Backend para invalidar a sessão do usuário.
-   */
   async signOut() {
     const response = await fetch(`${BACKEND_URL}/api/auth/logout`, {
       method: "POST",
@@ -66,9 +64,6 @@ export const AuthService = {
     }
   },
 
-  /**
-   * Busca os dados do usuário logado (via cookie).
-   */
   async getMe() {
     const response = await fetch(`${BACKEND_URL}/api/auth/me`, {
       method: "GET",

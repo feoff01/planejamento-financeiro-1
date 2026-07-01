@@ -10,3 +10,12 @@ __pycache__/
 .venv/
 venv/
 env/
+.env
+.env.local
+node_modules
+.next
+backend/node_modules
+frontend/node_modules
+backend/.env
+frontend/.env.local
+frontend/.next

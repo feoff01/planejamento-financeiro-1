@@ -49,8 +49,8 @@ export class DiagnosticoRepository {
           user_id: userId,
           perfil_calculado: perfil,
           ...dadosSimples,
-          objetivos_selecionados: JSON.stringify(objetivos_selecionados || []),
-          detalhes_objetivos: JSON.stringify(detalhes_objetivos || {}),
+          objetivos_selecionados: objetivos_selecionados || [],
+	  detalhes_objetivos: detalhes_objetivos || {},
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id" }

@@ -16,7 +16,7 @@ import {
 } from "./PlanoResultadoLayout";
 
 type Props = {
-  plano: PlanoEspecifico;
+  plano?: PlanoEspecifico | null;
   onBack: () => void;
 };
 
@@ -85,27 +85,27 @@ export type PlanoEspecifico = {
     aportado: number;
     projetado: number;
   }>;
-  portfolio: Record<string, number>;
-  risk: {
+  portfolio?: Record<string, number>;
+  risk?: {
     mu?: number;
     sigma?: number;
     sharpe?: number;
-    var_95: number;
+    var_95?: number;
   };
-  simulation: {
-    prob_meta: number | null;
+  simulation?: {
+    prob_meta?: number | null;
     prob_perda_real?: number;
     median?: number;
   };
   contribution_plan?: ContributionPlan;
-  analysis: {
+  analysis?: {
     planScore?: {
       score: number;
       rating: string;
     };
-    trafficLight: Record<string, TrafficLightInfo> & {
-      viability: TrafficLightInfo;
-      portfolio_risk: TrafficLightInfo;
+    trafficLight?: Record<string, TrafficLightInfo> & {
+      viability?: TrafficLightInfo;
+      portfolio_risk?: TrafficLightInfo;
     };
   };
 };
@@ -117,41 +117,50 @@ const ASSET_GROUPS: Array<{ key: PlanoAssetGroupKey; label: string }> = [
 ];
 
 export function OutputEspecifico({ plano }: Props) {
-  const chance = useMemo(() => buildChance(plano), [plano]);
+  const safePlano = plano ?? {};
+
+  const chance = useMemo(() => buildChance(safePlano), [safePlano]);
+
   const metrics = useMemo<PlanoMetric[]>(
     () => [
       {
         icon: PLANO_RESULT_ICONS.CalendarClock,
         label: "Tempo estimado",
-        value: plano.tempo_estimado?.label ?? "Prazo não informado",
+        value: safePlano.tempo_estimado?.label ?? "Prazo não informado",
         desc: "Prazo estimado para concluir todos os objetivos, considerando aporte mensal e retorno esperado.",
       },
       {
         icon: PLANO_RESULT_ICONS.Target,
         label: "Chance de sucesso",
         value: chance.value,
-        desc: plano.analysis.trafficLight.viability.desc,
+        desc:
+          safePlano.analysis?.trafficLight?.viability?.desc ??
+          "Probabilidade estimada com base no diagnóstico informado.",
         tone: chance.label,
       },
     ],
-    [chance, plano.analysis.trafficLight.viability.desc, plano.tempo_estimado?.label]
+    [
+      chance,
+      safePlano.analysis?.trafficLight?.viability?.desc,
+      safePlano.tempo_estimado?.label,
+    ]
   );
 
   return (
     <PlanoResultadoLayout
       mode="revealed"
       metrics={metrics}
-      objetivos={buildObjetivos(plano)}
-      aportePlan={buildAportePlan(plano)}
-      allocation={buildAllocation(plano)}
-      assetGroups={buildAssetGroups(plano)}
-      assetExplanations={buildAssetExplanations(plano)}
-      growthProjection={plano.growth_projection ?? []}
+      objetivos={buildObjetivos(safePlano)}
+      aportePlan={buildAportePlan(safePlano)}
+      allocation={buildAllocation(safePlano)}
+      assetGroups={buildAssetGroups(safePlano)}
+      assetExplanations={buildAssetExplanations(safePlano)}
+      growthProjection={safePlano.growth_projection ?? []}
     />
   );
 }
 
-function buildObjetivos(plano: PlanoEspecifico): PlanoObjetivo[] {
+function buildObjetivos(plano: Partial<PlanoEspecifico>): PlanoObjetivo[] {
   return (plano.goals ?? []).map((goal) => ({
     id: `goal-${goal.goal_index}`,
     label: goal.name,
@@ -161,16 +170,18 @@ function buildObjetivos(plano: PlanoEspecifico): PlanoObjetivo[] {
   }));
 }
 
-function buildAportePlan(plano: PlanoEspecifico): PlanoAportePlan {
+function buildAportePlan(plano: Partial<PlanoEspecifico>): PlanoAportePlan {
   if (plano.contribution_plan) {
+    const objetivos = plano.contribution_plan.objetivos ?? [];
+
     return {
       total_mensal: plano.contribution_plan.total_mensal ?? 0,
-      goal_count: plano.contribution_plan.goal_count ?? plano.contribution_plan.objetivos.length,
-      objetivos: plano.contribution_plan.objetivos.map((objetivo) => ({
+      goal_count: plano.contribution_plan.goal_count ?? objetivos.length,
+      objetivos: objetivos.map((objetivo) => ({
         id: `goal-${objetivo.goal_index}`,
         goal_index: objetivo.goal_index,
         goal_name: objetivo.goal_name,
-        aporte_mensal: objetivo.aporte_mensal,
+        aporte_mensal: objetivo.aporte_mensal ?? 0,
       })),
     };
   }
@@ -189,7 +200,7 @@ function buildAportePlan(plano: PlanoEspecifico): PlanoAportePlan {
   };
 }
 
-function buildAllocation(plano: PlanoEspecifico): PlanoAllocation {
+function buildAllocation(plano: Partial<PlanoEspecifico>): PlanoAllocation {
   return {
     renda_fixa: Number(plano.allocation_summary?.renda_fixa ?? 0),
     renda_variavel: Number(plano.allocation_summary?.renda_variavel ?? 0),
@@ -197,7 +208,7 @@ function buildAllocation(plano: PlanoEspecifico): PlanoAllocation {
   };
 }
 
-function buildAssetGroups(plano: PlanoEspecifico): PlanoAssetGroup[] {
+function buildAssetGroups(plano: Partial<PlanoEspecifico>): PlanoAssetGroup[] {
   return ASSET_GROUPS.map((meta) => {
     const group = plano.asset_groups?.find((item) => item.key === meta.key);
 
@@ -205,19 +216,20 @@ function buildAssetGroups(plano: PlanoEspecifico): PlanoAssetGroup[] {
       key: meta.key,
       label: meta.label,
       assets:
-        group?.assets.map((asset) => ({
+        group?.assets?.map((asset) => ({
           id: asset.id,
           label: asset.label,
-          percentual: asset.percentual,
+          percentual: asset.percentual ?? 0,
         })) ?? [],
     };
   });
 }
 
-function buildAssetExplanations(plano: PlanoEspecifico): PlanoAssetExplanations {
+function buildAssetExplanations(plano: Partial<PlanoEspecifico>): PlanoAssetExplanations {
   return {
     enabled: true,
-    summary: "A carteira combina liquidez, proteção e crescimento para equilibrar prazo, risco e objetivo.",
+    summary:
+      "A carteira combina liquidez, proteção e crescimento para equilibrar prazo, risco e objetivo.",
     items:
       plano.asset_explanations?.map((item) => ({
         id: item.id,
@@ -227,14 +239,25 @@ function buildAssetExplanations(plano: PlanoEspecifico): PlanoAssetExplanations 
   };
 }
 
-function buildChance(plano: PlanoEspecifico): { value: string; label: PlanoChanceLabel } {
-  const probability = plano.simulation.prob_meta;
+function buildChance(plano: Partial<PlanoEspecifico>): {
+  value: string;
+  label: PlanoChanceLabel;
+} {
+  const probability = plano.simulation?.prob_meta ?? null;
 
-  if (probability === null) return { value: "Indefinida", label: "Indefinida" };
+  if (probability === null || probability === undefined) {
+    return { value: "Indefinida", label: "Indefinida" };
+  }
 
   const percent = Math.round(probability * 100);
 
-  if (probability >= 0.8) return { value: `Alta - ${percent}%`, label: "Alta" };
-  if (probability >= 0.6) return { value: `Moderada - ${percent}%`, label: "Moderada" };
+  if (probability >= 0.8) {
+    return { value: `Alta - ${percent}%`, label: "Alta" };
+  }
+
+  if (probability >= 0.6) {
+    return { value: `Moderada - ${percent}%`, label: "Moderada" };
+  }
+
   return { value: `Baixa - ${percent}%`, label: "Baixa" };
 }
