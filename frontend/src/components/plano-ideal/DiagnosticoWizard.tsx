@@ -330,3 +330,4 @@ export function DiagnosticoWizard({ onResultadoVisibleChange }: Props) {
     </div>
   );
 }
+

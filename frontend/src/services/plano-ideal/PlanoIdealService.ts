@@ -2,7 +2,7 @@
  * PlanoIdealService (Frontend)
  * Responsável por chamar a API do Motor Financeiro Institucional.
  */
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3333";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://planejamento-financeiro-backend-scp3.onrender.com";
 
 export type GoalPayload = {
   name: string;
@@ -146,3 +146,4 @@ export const PlanoIdealService = {
     return result.data;
   },
 };
+

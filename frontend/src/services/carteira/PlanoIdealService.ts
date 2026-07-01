@@ -3,7 +3,7 @@ import type { DiagnosticoCompleto } from "@/schemas/diagnosticoSchemas";
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:3333";
+  "https://planejamento-financeiro-backend-scp3.onrender.com";
 
 export type GoalPayload = {
   nome?: string;

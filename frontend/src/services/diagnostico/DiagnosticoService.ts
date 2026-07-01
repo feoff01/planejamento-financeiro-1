@@ -1,7 +1,7 @@
 import { DiagnosticoCompleto } from "@/schemas/diagnosticoSchemas";
 
 const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3333";
+  process.env.NEXT_PUBLIC_BACKEND_URL || "https://planejamento-financeiro-backend-scp3.onrender.com";
 
 type OutputGenericoTeaser = {
   chance_sucesso: {
@@ -69,3 +69,4 @@ export const DiagnosticoService = {
     return result as DiagnosticoResponse;
   },
 };
+

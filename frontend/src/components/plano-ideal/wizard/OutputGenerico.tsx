@@ -313,3 +313,4 @@ function formatChanceValue(chance: OutputGenericoTeaser["chance_sucesso"]) {
   if (chance.value === null) return chance.label;
   return `${chance.label} - ${Math.round(chance.value * 100)}%`;
 }
+

@@ -37,3 +37,4 @@ export const navigationItems: NavItem[] = [
   { icon: CreditCard, label: "Planos", locked: false, href: "/planos" },
   { icon: LifeBuoy, label: "Suporte", locked: false, href: "/suporte" },
 ];
+

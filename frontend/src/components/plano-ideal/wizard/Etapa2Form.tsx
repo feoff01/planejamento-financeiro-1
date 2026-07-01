@@ -115,3 +115,4 @@ export function Etapa2Form({ onNext, onBack }: Props) {
     </form>
   );
 }
+

@@ -222,3 +222,4 @@ export function Etapa1Form({ onNext }: Props) {
     </form>
   );
 }
+

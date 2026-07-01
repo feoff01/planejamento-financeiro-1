@@ -17,3 +17,4 @@ export const CadastroSchema = z.object({
 
 export type LoginFormData = z.infer<typeof LoginSchema>;
 export type CadastroFormData = z.infer<typeof CadastroSchema>;
+

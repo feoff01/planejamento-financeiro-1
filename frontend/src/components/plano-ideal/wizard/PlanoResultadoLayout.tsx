@@ -700,3 +700,4 @@ function chanceToneClass(tone?: PlanoChanceLabel) {
   if (tone === "Baixa") return "text-primary-700";
   return "text-blue-brand-950";
 }
+

@@ -77,3 +77,4 @@ export type Etapa3Data = z.infer<typeof Etapa3Schema>;
 export type Etapa4Data = z.infer<typeof Etapa4Schema>;
 export type Etapa5Data = z.infer<typeof Etapa5Schema>;
 export type DiagnosticoCompleto = z.infer<typeof DiagnosticoCompletoSchema>;
+

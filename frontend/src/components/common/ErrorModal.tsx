@@ -87,3 +87,4 @@ export function ErrorModal({ isOpen, message, onClose, onRetry, closeLabel = "Fe
     </AnimatePresence>
   );
 }
+

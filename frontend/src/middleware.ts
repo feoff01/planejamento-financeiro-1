@@ -41,3 +41,4 @@ export const config = {
     '/auth/cadastro'
   ],
 };
+

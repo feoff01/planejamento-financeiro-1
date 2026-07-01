@@ -69,3 +69,4 @@ export function useAuth() {
 
   return { signIn, signUp, signOut, isLoading, error };
 }
+
