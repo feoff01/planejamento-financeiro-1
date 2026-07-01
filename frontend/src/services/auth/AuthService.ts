@@ -6,10 +6,11 @@ import { LoginFormData, CadastroFormData } from "@/schemas/authSchemas";
  * Este serviço pertence ao Frontend e atua APENAS como ponte de comunicação
  * com o Backend.
  */
+
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:3333";
+  "https://planejamento-financeiro-backend-scp3.onrender.com";
 
 export const AuthService = {
   async signIn(data: LoginFormData) {
