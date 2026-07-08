@@ -2,13 +2,13 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { ArrowRight, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ArrowRight, AlertTriangle } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { Control, Controller, useForm, useWatch } from "react-hook-form";
 
 import { Etapa1Data, Etapa1Schema } from "@/schemas/diagnosticoSchemas";
 
-type Props = { onNext: (data: Etapa1Data) => void };
+type Props = { onNext: (data: Etapa1Data) => void; onBack: () => void };
 
 const inputClass =
   "w-full rounded-2xl border border-blue-brand-950/10 bg-white/70 px-4 py-3 text-sm text-blue-brand-950 placeholder:text-blue-brand-950/35 outline-none transition-all focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10";
@@ -69,7 +69,7 @@ function CurrencyInput({
   );
 }
 
-export function Etapa1Form({ onNext }: Props) {
+export function Etapa1Form({ onNext, onBack }: Props) {
   const hasUserAdjustedAporte = useRef(false);
 
   const {
@@ -212,13 +212,23 @@ export function Etapa1Form({ onNext }: Props) {
         )
       )}
 
-      <button
-        type="submit"
-        className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-brand-950 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-blue-brand-900"
-      >
-        Continuar
-        <ArrowRight size={16} />
-      </button>
+      <div className="flex gap-3 pt-2">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex flex-1 items-center justify-center gap-2 rounded-full border border-blue-brand-950/15 px-5 py-3 text-sm font-semibold text-blue-brand-950/60 transition-all hover:border-blue-brand-950/35 hover:text-blue-brand-950"
+        >
+          <ArrowLeft size={16} />
+          Voltar
+        </button>
+        <button
+          type="submit"
+          className="flex flex-[2] items-center justify-center gap-2 rounded-full bg-blue-brand-950 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-brand-900"
+        >
+          Continuar
+          <ArrowRight size={16} />
+        </button>
+      </div>
     </form>
   );
 }

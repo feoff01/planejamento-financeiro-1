@@ -26,7 +26,24 @@ export const Etapa2Schema = z
       .number({ message: "Informe seu patrimônio atual." })
       .min(0, "O patrimônio não pode ser negativo."),
     tipos_ativos: z.array(z.string()),
+    investe_atualmente: z.enum(["sim", "nao"], {
+      message: "Conte para a Synapta se você já investe hoje.",
+    }),
   });
+
+// ── Etapa Investimentos (apenas para quem já investe) ─────────────────────────
+export const EtapaInvestimentosSchema = z.object({
+  onde_investe: z
+    .array(z.string())
+    .min(1, "Selecione ao menos uma instituição."),
+  valor_investido: z
+    .number({ message: "Informe quanto você tem investido." })
+    .min(0, "O valor não pode ser negativo."),
+  classes_investidas: z
+    .array(z.string())
+    .min(1, "Selecione ao menos uma classe de ativos."),
+  estrategia_atual: z.string().min(1, "Selecione a opção que mais se parece com você."),
+});
 
 // ── Etapa 3: Seleção de Objetivos ─────────────────────────────────────────────
 export const Etapa3Schema = z.object({
@@ -69,9 +86,11 @@ export const DiagnosticoCompletoSchema = Etapa1Schema
   .merge(Etapa2Schema)
   .merge(Etapa3Schema)
   .merge(Etapa4Schema)
-  .merge(Etapa5Schema);
+  .merge(Etapa5Schema)
+  .merge(EtapaInvestimentosSchema.partial());
 
 export type Etapa1Data = z.infer<typeof Etapa1Schema>;
+export type EtapaInvestimentosData = z.infer<typeof EtapaInvestimentosSchema>;
 export type Etapa2Data = z.infer<typeof Etapa2Schema>;
 export type Etapa3Data = z.infer<typeof Etapa3Schema>;
 export type Etapa4Data = z.infer<typeof Etapa4Schema>;

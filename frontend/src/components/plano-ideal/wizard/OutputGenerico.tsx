@@ -2,7 +2,16 @@
 
 import { useMemo, useState } from "react";
 
+import {
+  ALOCACAO_RF_SYNAPTA,
+  CARTEIRA_RF_GRATIS,
+  calcularPlanoReserva,
+  type PerfilRisco,
+} from "@/lib/plano/projecoes";
+
 import { ReservaDisclaimerModal } from "./ModalIntermediarioReserva";
+import { RaioXCallout } from "./RaioXCallout";
+import { ReservaEmergenciaCard } from "./ReservaEmergenciaCard";
 import {
   PLANO_RESULT_ICONS,
   PlanoResultadoLayout,
@@ -70,6 +79,7 @@ type DetalheObjetivo = {
 type DadosCompletos = {
   aporte_mensal?: number;
   patrimonio_total?: number;
+  gastos_mensais?: number;
   objetivos_selecionados?: ObjetivoSelecionado[];
   detalhes_objetivos?: Record<string, DetalheObjetivo>;
 };
@@ -79,6 +89,12 @@ type Props = {
   dadosCompletos: DadosCompletos;
   onUnlock: () => void;
   isUnlocking?: boolean;
+  /** Ramo do onboarding: define o que fica liberado e qual chamada do Raio-X aparece. */
+  investeAtualmente?: "sim" | "nao";
+  /** Perfil calculado no diagnóstico (usado para montar a carteira RF liberada). */
+  perfil?: PerfilRisco;
+  /** Pula o disclaimer de reserva (quando ele já foi exibido em uma tela anterior). */
+  exibirDisclaimerReserva?: boolean;
 };
 
 const ASSET_GROUPS: Array<{ key: PlanoAssetGroupKey; label: string }> = [
@@ -95,22 +111,64 @@ const LOCKED_ASSET_PLACEHOLDERS: Record<PlanoAssetGroupKey, string[]> = {
 
 const LOCKED_TIME_PLACEHOLDER = "12 anos";
 
-export function OutputGenerico({ resultado, dadosCompletos, onUnlock, isUnlocking = false }: Props) {
-  const [showReservaDisclaimer, setShowReservaDisclaimer] = useState(true);
+export function OutputGenerico({
+  resultado,
+  dadosCompletos,
+  onUnlock,
+  isUnlocking = false,
+  investeAtualmente,
+  perfil = "moderado",
+  exibirDisclaimerReserva = true,
+}: Props) {
+  const [showReservaDisclaimer, setShowReservaDisclaimer] = useState(exibirDisclaimerReserva);
+  const carteiraRfLiberada = investeAtualmente === "nao";
   const objetivos = useMemo(() => buildObjetivosResumo(dadosCompletos), [dadosCompletos]);
   const teaser = useMemo(
     () => normalizeTeaser(resultado.output_generico?.teaser),
     [resultado.output_generico?.teaser]
   );
-  const assetGroups = useMemo(() => buildLockedAssetGroups(teaser.asset_groups), [teaser.asset_groups]);
+  const assetGroups = useMemo(() => {
+    const grupos = buildLockedAssetGroups(teaser.asset_groups);
+    if (!carteiraRfLiberada) return grupos;
+
+    // Virada de chave: a renda fixa foi entregue de graça — aparece 100% aberta.
+    return grupos.map((grupo) =>
+      grupo.key === "renda_fixa"
+        ? {
+            ...grupo,
+            assets: CARTEIRA_RF_GRATIS[perfil].map((ativo) => ({
+              id: ativo.id,
+              label: ativo.label,
+              percentual: ativo.percentual,
+              locked: false,
+            })),
+          }
+        : grupo
+    );
+  }, [carteiraRfLiberada, perfil, teaser.asset_groups]);
   const aportePlan = useMemo(
     () => normalizeAportePlan(teaser.aporte_plan, dadosCompletos, objetivos),
     [dadosCompletos, objetivos, teaser.aporte_plan]
   );
-  const assetExplanations = useMemo(
-    () => buildLockedAssetExplanations(teaser.asset_explanations, assetGroups),
-    [assetGroups, teaser.asset_explanations]
-  );
+  const assetExplanations = useMemo(() => {
+    const base = buildLockedAssetExplanations(teaser.asset_explanations, assetGroups);
+    if (!carteiraRfLiberada) return base;
+
+    return {
+      ...base,
+      summary:
+        "A parte de renda fixa já é sua e está aberta abaixo. Os ativos de renda variável — e o peso certo de cada um — fazem parte da recomendação completa.",
+      items: [
+        ...CARTEIRA_RF_GRATIS[perfil].map((ativo) => ({
+          id: `rf-${ativo.id}`,
+          assetLabel: ativo.label,
+          explanation: ativo.papel,
+          locked: false,
+        })),
+        ...base.items,
+      ],
+    };
+  }, [assetGroups, carteiraRfLiberada, perfil, teaser.asset_explanations]);
   const metrics = useMemo<PlanoMetric[]>(
     () => [
       {
@@ -130,9 +188,15 @@ export function OutputGenerico({ resultado, dadosCompletos, onUnlock, isUnlockin
     ],
     [teaser.chance_sucesso]
   );
+  const planoReserva = calcularPlanoReserva(
+    dadosCompletos.gastos_mensais ?? 0,
+    dadosCompletos.patrimonio_total ?? 0,
+    dadosCompletos.aporte_mensal ?? 0
+  );
+
   const allocation: PlanoAllocation = {
-    renda_fixa: 70,
-    renda_variavel: 38,
+    renda_fixa: carteiraRfLiberada ? ALOCACAO_RF_SYNAPTA[perfil] : 70,
+    renda_variavel: carteiraRfLiberada ? 100 - ALOCACAO_RF_SYNAPTA[perfil] - Math.round(resultado.alocacao.liquidez) : 38,
     liquidez: resultado.alocacao.liquidez,
   };
 
@@ -147,7 +211,18 @@ export function OutputGenerico({ resultado, dadosCompletos, onUnlock, isUnlockin
         assetGroups={assetGroups}
         assetExplanations={assetExplanations}
         growthProjection={[]}
-        footer={<PlanoUnlockFooter onUnlock={onUnlock} isUnlocking={isUnlocking} />}
+        revealedGroups={carteiraRfLiberada ? ["renda_fixa"] : []}
+        extraSection={<ReservaEmergenciaCard plano={planoReserva} notaProjecoes />}
+        footer={
+          <>
+            <RaioXCallout variante={investeAtualmente === "sim" ? "investidor" : "iniciante"} />
+            <PlanoUnlockFooter
+              onUnlock={onUnlock}
+              isUnlocking={isUnlocking}
+              label={carteiraRfLiberada ? "Ver recomendação completa" : "Desbloquear plano completo"}
+            />
+          </>
+        }
       />
 
       {showReservaDisclaimer && <ReservaDisclaimerModal onContinue={() => setShowReservaDisclaimer(false)} />}

@@ -9,6 +9,7 @@ import {
   LifeBuoy,
   LucideIcon,
   MessageSquareText,
+  Radar,
   ScanSearch,
   Target,
   UserCheck,
@@ -24,6 +25,7 @@ export type NavItem = {
 
 export const navigationItems: NavItem[] = [
   { icon: Target, label: "Plano Ideal", locked: false, href: "/plano-ideal" },
+  { icon: Radar, label: "Raio-X da Carteira", locked: false, href: "/raio-x" },
   { icon: Activity, label: "Meu acompanhamento", locked: false, href: "/meu-acompanhamento" },
   { icon: LayoutDashboard, label: "Dashboard", locked: true },
   { icon: Wallet, label: "Minha Carteira", locked: true },

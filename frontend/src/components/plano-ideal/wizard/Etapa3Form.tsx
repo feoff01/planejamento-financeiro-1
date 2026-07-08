@@ -19,9 +19,9 @@ const PREDEFINED_OBJETIVOS: Array<Etapa3Data["objetivos_selecionados"][number]> 
   { id: "negocio_proprio", label: "Negócio próprio" },
 ];
 
-type Props = { onNext: (data: Etapa3Data) => void; onBack: () => void };
+type Props = { onNext: (data: Etapa3Data) => void; onBack: () => void; podeVoltar?: boolean };
 
-export function Etapa3Form({ onNext, onBack }: Props) {
+export function Etapa3Form({ onNext, onBack, podeVoltar = true }: Props) {
   const {
     handleSubmit,
     control,
@@ -179,7 +179,9 @@ export function Etapa3Form({ onNext, onBack }: Props) {
         <button
           type="button"
           onClick={onBack}
-          className="flex flex-1 items-center justify-center gap-2 rounded-full border border-blue-brand-950/15 px-5 py-3 text-sm font-semibold text-blue-brand-950/60 transition-all hover:border-blue-brand-950/35 hover:text-blue-brand-950"
+          className={`flex flex-1 items-center justify-center gap-2 rounded-full border border-blue-brand-950/15 px-5 py-3 text-sm font-semibold text-blue-brand-950/60 transition-all hover:border-blue-brand-950/35 hover:text-blue-brand-950 ${
+            podeVoltar ? "" : "invisible"
+          }`}
         >
           <ArrowLeft size={16} />
           Voltar

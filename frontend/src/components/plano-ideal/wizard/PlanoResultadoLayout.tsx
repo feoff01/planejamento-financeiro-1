@@ -109,6 +109,10 @@ type Props = {
   assetExplanations: PlanoAssetExplanations;
   growthProjection: PlanoGrowthPoint[];
   footer?: ReactNode;
+  /** Grupos que ficam abertos mesmo em modo "locked" (ex.: renda fixa grátis). */
+  revealedGroups?: PlanoAssetGroupKey[];
+  /** Seção extra logo após as métricas (ex.: card da reserva de emergência). */
+  extraSection?: ReactNode;
 };
 
 const FEATURE_ITEMS: Array<{ icon: LucideIcon; title: string; desc: string }> = [
@@ -161,6 +165,8 @@ export function PlanoResultadoLayout({
   assetExplanations,
   growthProjection,
   footer,
+  revealedGroups = [],
+  extraSection,
 }: Props) {
   return (
     <motion.div
@@ -189,11 +195,13 @@ export function PlanoResultadoLayout({
         </div>
       </section>
 
+      {extraSection}
+
       <ObjectivesPreview objetivos={objetivos} />
 
       <AportesPreview mode={mode} plan={aportePlan} />
 
-      <InvestmentPreview mode={mode} allocation={allocation} />
+      <InvestmentPreview mode={mode} allocation={allocation} revealedGroups={revealedGroups} />
 
       <AssetGroupsPreview mode={mode} groups={assetGroups} />
 
@@ -209,14 +217,16 @@ export function PlanoResultadoLayout({
 export function PlanoUnlockFooter({
   onUnlock,
   isUnlocking = false,
+  label = "Desbloquear plano completo",
 }: {
   onUnlock: () => void;
   isUnlocking?: boolean;
+  label?: string;
 }) {
   return (
     <>
       <IncludedFeatures />
-      <UnlockButton onOpen={onUnlock} isLoading={isUnlocking} />
+      <UnlockButton onOpen={onUnlock} isLoading={isUnlocking} label={label} />
     </>
   );
 }
@@ -346,7 +356,19 @@ function AporteGoalLine({ objetivo, locked }: { objetivo: PlanoAporteObjetivo; l
   );
 }
 
-function InvestmentPreview({ mode, allocation }: { mode: PlanoMode; allocation: PlanoAllocation }) {
+function InvestmentPreview({
+  mode,
+  allocation,
+  revealedGroups = [],
+}: {
+  mode: PlanoMode;
+  allocation: PlanoAllocation;
+  revealedGroups?: PlanoAssetGroupKey[];
+}) {
+  const isLocked = (key: PlanoAssetGroupKey) => mode === "locked" && !revealedGroups.includes(key);
+  const isRevealedTeaser = (key: PlanoAssetGroupKey) =>
+    mode === "locked" && revealedGroups.includes(key);
+
   return (
     <section className="space-y-4">
       <div className="text-center">
@@ -355,8 +377,18 @@ function InvestmentPreview({ mode, allocation }: { mode: PlanoMode; allocation: 
 
       <div className="overflow-hidden rounded-[1.25rem] bg-white/70">
         <div className="grid md:grid-cols-3">
-          <AllocationBlock label="Renda fixa" value={allocation.renda_fixa} locked={mode === "locked"} />
-          <AllocationBlock label="Renda variável" value={allocation.renda_variavel} locked={mode === "locked"} />
+          <AllocationBlock
+            label="Renda fixa"
+            value={allocation.renda_fixa}
+            locked={isLocked("renda_fixa")}
+            liberada={isRevealedTeaser("renda_fixa")}
+          />
+          <AllocationBlock
+            label="Renda variável"
+            value={allocation.renda_variavel}
+            locked={isLocked("renda_variavel")}
+            liberada={isRevealedTeaser("renda_variavel")}
+          />
           <AllocationBlock label="Liquidez" value={allocation.liquidez} />
         </div>
       </div>
@@ -364,7 +396,17 @@ function InvestmentPreview({ mode, allocation }: { mode: PlanoMode; allocation: 
   );
 }
 
-function AllocationBlock({ label, value, locked = false }: { label: string; value: number; locked?: boolean }) {
+function AllocationBlock({
+  label,
+  value,
+  locked = false,
+  liberada = false,
+}: {
+  label: string;
+  value: number;
+  locked?: boolean;
+  liberada?: boolean;
+}) {
   return (
     <div className="border-b border-blue-brand-950/10 p-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0 sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -372,6 +414,11 @@ function AllocationBlock({ label, value, locked = false }: { label: string; valu
         {locked && (
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-brand-950/10 text-blue-brand-950/40">
             <Lock size={14} />
+          </span>
+        )}
+        {liberada && (
+          <span className="rounded-full bg-primary-400/20 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-primary-700">
+            Liberada
           </span>
         )}
       </div>
@@ -610,7 +657,15 @@ function GrowthProjectionPreview({ mode, data }: { mode: PlanoMode; data: PlanoG
   );
 }
 
-function UnlockButton({ onOpen, isLoading = false }: { onOpen: () => void; isLoading?: boolean }) {
+function UnlockButton({
+  onOpen,
+  isLoading = false,
+  label = "Desbloquear plano completo",
+}: {
+  onOpen: () => void;
+  isLoading?: boolean;
+  label?: string;
+}) {
   return (
     <motion.button
       whileTap={{ scale: 0.98 }}
@@ -619,7 +674,7 @@ function UnlockButton({ onOpen, isLoading = false }: { onOpen: () => void; isLoa
       className="flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-primary-400 px-6 py-4 text-center text-sm font-semibold text-blue-brand-950 transition-colors hover:bg-primary-500 disabled:cursor-not-allowed disabled:opacity-70"
     >
       <Lock size={17} />
-      <span>{isLoading ? "Gerando plano completo..." : "Desbloquear plano completo"}</span>
+      <span>{isLoading ? "Gerando plano completo..." : label}</span>
       <ArrowRight size={17} />
     </motion.button>
   );

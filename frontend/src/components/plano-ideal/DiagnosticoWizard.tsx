@@ -2,72 +2,69 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { PlanoIdealService, type GoalPayload } from "@/services/carteira/PlanoIdealService";
 import type { DiagnosticoCompleto } from "@/schemas/diagnosticoSchemas";
-import { useDiagnostico } from "@/hooks/useDiagnostico";
+import { useDiagnostico, type EtapaKey } from "@/hooks/useDiagnostico";
+import { CARTEIRA_RF_GRATIS, calcularPerfil, calcularPlanoReserva, type PerfilRisco } from "@/lib/plano/projecoes";
 import { ErrorModal } from "../common/ErrorModal";
+import { GuiaChat } from "./GuiaChat";
+import { BoasVindas } from "./wizard/BoasVindas";
+import { CenariosCarteiras } from "./wizard/CenariosCarteiras";
 import { Etapa1Form } from "./wizard/Etapa1Form";
 import { Etapa2Form } from "./wizard/Etapa2Form";
 import { Etapa3Form } from "./wizard/Etapa3Form";
 import { Etapa4DetalhesObjetivos } from "./wizard/Etapa4DetalhesObjetivos";
 import { Etapa5Form } from "./wizard/Etapa5Form";
+import { EtapaComparativoInvestir } from "./wizard/EtapaComparativoInvestir";
+import { EtapaInvestimentosForm } from "./wizard/EtapaInvestimentosForm";
 import { EtapaLoadingScreen } from "./wizard/EtapaLoadingScreen";
 import { OutputEspecifico, type PlanoEspecifico } from "./wizard/OutputEspecifico";
 import { OutputGenerico } from "./wizard/OutputGenerico";
 
-const ETAPAS = [
-  { num: 1, label: "Renda" },
-  { num: 2, label: "Patrimônio" },
-  { num: 3, label: "Objetivos" },
-  { num: 4, label: "Detalhes" },
-  { num: 5, label: "Risco" },
-  { num: 6, label: "Resultado" },
-];
-
-const STEP_COPY: Record<number, { title: string; desc: string }> = {
-  1: {
-    title: "Comece pelo fluxo mensal.",
-    desc: "Renda, gastos e capacidade de aporte mostram o ritmo real do plano.",
-  },
-  2: {
-    title: "Defina seu ponto de partida.",
-    desc: "Seu patrimônio atual fica registrado para futuras análises, sem abater os objetivos deste plano.",
-  },
-  3: {
+const ETAPA_META: Record<Exclude<EtapaKey, "resultado">, { label: string; title: string; desc: string }> = {
+  objetivos: {
+    label: "Objetivos",
     title: "Escolha os objetivos que importam.",
-    desc: "A Synapta usa essas metas para organizar prioridade, prazo e alocação.",
+    desc: "Todo plano começa por um destino — é a partir dele que traçamos a rota.",
   },
-  4: {
+  detalhes: {
+    label: "Detalhes",
     title: "Dê números aos planos.",
     desc: "Valor, prazo e prioridade transformam intenção em estratégia.",
   },
-  5: {
+  renda: {
+    label: "Renda",
+    title: "Agora, o motor do plano.",
+    desc: "Renda, gastos e capacidade de aporte mostram o ritmo real — e definem sua reserva de emergência ideal.",
+  },
+  patrimonio: {
+    label: "Momento",
+    title: "Qual é o seu momento hoje?",
+    desc: "Essa resposta define a rota do plano daqui em diante.",
+  },
+  comparativo: {
+    label: "Virada",
+    title: "O custo de deixar o dinheiro parado.",
+    desc: "Com os seus números: a mesma disciplina de hoje, em dois destinos muito diferentes.",
+  },
+  investimentos: {
+    label: "Investimentos",
+    title: "Agora, sobre seus investimentos.",
+    desc: "Quanto mais fiel o retrato da sua carteira, mais preciso ficam o plano e o Raio-X.",
+  },
+  risco: {
+    label: "Risco",
     title: "Calibre sua relação com risco.",
     desc: "O Plano Ideal precisa caber também no seu comportamento em momentos difíceis.",
   },
 };
 
-const PONTOS_REACAO: Record<string, number> = {
-  vender_tudo: 0,
-  espera_preocupado: 1,
-  mantenho_tranquilo: 2,
-  compra_mais: 3,
-};
-
-const PONTOS_EXPERIENCIA: Record<string, number> = {
-  nunca: 0,
-  pouca: 1,
-  media: 2,
-  experiente: 3,
-};
-
-const PONTOS_RISCO: Record<string, number> = {
-  ate_10: 0,
-  ate_30: 1,
-  ate_60: 2,
-  mais_60: 3,
+const PERFIL_TO_RISK: Record<PerfilRisco, GoalPayload["risk"]> = {
+  conservador: "conservative",
+  moderado: "moderate",
+  arrojado: "aggressive",
 };
 
 type Props = {
@@ -104,27 +101,8 @@ function isAuthError(message: string | null | undefined, status?: number) {
   );
 }
 
-function calcularRiskLevel(dados: DiagnosticoState): GoalPayload["risk"] {
-  let pontos =
-    (PONTOS_REACAO[dados.reacao_queda ?? ""] ?? 0) +
-    (PONTOS_EXPERIENCIA[dados.experiencia_rv ?? ""] ?? 0) +
-    (PONTOS_RISCO[dados.percentual_risco ?? ""] ?? 0);
-
-  const horizonteMax = Object.values(dados.detalhes_objetivos ?? {}).reduce(
-    (max, detalhe) => Math.max(max, detalhe.horizonte_anos ?? 0),
-    0
-  );
-
-  if (horizonteMax >= 15) pontos += 2;
-  else if (horizonteMax >= 8) pontos += 1;
-
-  if (pontos <= 3) return "conservative";
-  if (pontos <= 7) return "moderate";
-  return "aggressive";
-}
-
 function buildGoalsPayload(dados: DiagnosticoState): GoalPayload[] {
-  const risk = calcularRiskLevel(dados);
+  const risk = PERFIL_TO_RISK[calcularPerfil(dados)];
   const objetivos = dados.objetivos_selecionados ?? [];
 
   if (objetivos.length === 0) {
@@ -156,13 +134,38 @@ function buildGoalsPayload(dados: DiagnosticoState): GoalPayload[] {
   });
 }
 
+/** Persiste o estado do onboarding para o restante da plataforma (Raio-X, chat). */
+function persistirConclusao(dados: DiagnosticoState, perfil: PerfilRisco) {
+  try {
+    localStorage.setItem("synapta.diagnostico_concluido", "1");
+    localStorage.setItem("synapta.investe_atualmente", dados.investe_atualmente ?? "");
+    localStorage.setItem("synapta.perfil", perfil);
+    if (dados.investe_atualmente === "nao") {
+      localStorage.setItem(
+        "synapta.carteira_rf_gratis",
+        JSON.stringify(CARTEIRA_RF_GRATIS[perfil])
+      );
+    }
+  } catch {
+    // localStorage indisponível (SSR/modo privado) — segue sem persistir.
+  }
+}
+
 export function DiagnosticoWizard({ onResultadoVisibleChange }: Props) {
   const router = useRouter();
   const [planoEspecifico, setPlanoEspecifico] = useState<PlanoEspecifico | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
+  // Para quem não investe, o resultado abre nos Cenários (carteira RF grátis) antes do plano.
+  const [resultView, setResultView] = useState<"cenarios" | "plano">("plano");
+  // Tela de boas-vindas do Guia antes do wizard começar.
+  const [iniciado, setIniciado] = useState(false);
+  const topoRef = useRef<HTMLDivElement>(null);
   const {
+    fluxo,
     etapaAtual,
+    indiceEtapa,
+    totalPerguntas,
     isLoading,
     error,
     limparErro,
@@ -173,11 +176,44 @@ export function DiagnosticoWizard({ onResultadoVisibleChange }: Props) {
     dados,
   } = useDiagnostico();
 
-  const progressoPercent = ((etapaAtual - 1) / 5) * 100;
-  const isResultadoVisible = etapaAtual === 6 && (!!resultado || !!planoEspecifico) && !isLoading;
-  const copy = STEP_COPY[etapaAtual];
+  const perfil = calcularPerfil(dados);
+  const progressoPercent = (indiceEtapa / totalPerguntas) * 100;
+  const isResultado = etapaAtual === "resultado" && (!!resultado || !!planoEspecifico) && !isLoading;
+  const isResultadoVisible = isResultado && (resultView === "plano" || !!planoEspecifico);
+  const copy = etapaAtual !== "resultado" ? ETAPA_META[etapaAtual] : null;
+  const isTelaLarga = etapaAtual === "comparativo" || isResultado;
+
+  // Roteiro do Guia Synapta: qual "cena" está na tela agora.
+  const chatEtapaKey = !isResultado
+    ? etapaAtual
+    : planoEspecifico
+    ? "plano-completo"
+    : resultView === "cenarios"
+    ? "cenarios"
+    : `plano-${dados.investe_atualmente ?? "sim"}`;
+
+  const chatExtras = (() => {
+    if (!isResultado || planoEspecifico) return [] as string[];
+    const reserva = calcularPlanoReserva(
+      dados.gastos_mensais ?? 0,
+      dados.patrimonio_total ?? 0,
+      dados.aporte_mensal ?? 0
+    );
+    if (reserva.metaReserva > 0 && !reserva.temReserva) {
+      return [
+        "Sobre a sua <b>reserva de emergência</b>: ela ainda não cobre 6 meses de despesas. No card da reserva você vê quanto do aporte destinar a ela — em liquidez diária — enquanto o resto segue para os objetivos. 💪",
+      ];
+    }
+    if (reserva.metaReserva > 0 && reserva.temReserva) {
+      return [
+        "Boa notícia: você já tem <b>mais de 6 meses de despesas guardados</b> — sua reserva de emergência está completa e 100% do aporte pode ir para os objetivos. ✅",
+      ];
+    }
+    return [] as string[];
+  })();
   const activeError = error || unlockError;
   const activeErrorIsAuth = isAuthError(activeError);
+  const etapasBarra = fluxo.filter((key) => key !== "resultado");
 
   const closeError = () => {
     limparErro();
@@ -210,9 +246,32 @@ export function DiagnosticoWizard({ onResultadoVisibleChange }: Props) {
     }
   };
 
+  // Ao trocar de etapa (ou de tela de resultado), volta ao topo da página —
+  // evita a próxima etapa abrir "no meio" quando a anterior era longa.
+  // Roda após o paint (rAF) para vencer qualquer ajuste de layout da animação.
   useEffect(() => {
-    onResultadoVisibleChange?.(isResultadoVisible);
-  }, [isResultadoVisible, onResultadoVisibleChange]);
+    const frame = requestAnimationFrame(() => {
+      topoRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [etapaAtual, indiceEtapa, resultView, isLoading]);
+
+  // Ao concluir o diagnóstico: define a primeira tela do resultado e persiste flags.
+  useEffect(() => {
+    if (!resultado) return;
+    setResultView(dados.investe_atualmente === "nao" ? "cenarios" : "plano");
+    persistirConclusao(dados, calcularPerfil(dados));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resultado]);
+
+  useEffect(() => {
+    // Avisa a página quando a tela atual é "larga" (comparativo, cenários, plano)
+    // para alargar o container e aplicar o cartão com borda/sombra.
+    onResultadoVisibleChange?.(isTelaLarga || isResultadoVisible || (isResultado && resultView === "cenarios"));
+  }, [isResultado, isResultadoVisible, isTelaLarga, onResultadoVisibleChange, resultView]);
 
   useEffect(() => {
     if (!activeErrorIsAuth || !activeError) return;
@@ -224,13 +283,22 @@ export function DiagnosticoWizard({ onResultadoVisibleChange }: Props) {
     return () => window.clearTimeout(redirectTimer);
   }, [activeError, activeErrorIsAuth, router]);
 
+  if (!iniciado) {
+    return (
+      <div className="mx-auto w-full max-w-3xl">
+        <BoasVindas onComecar={() => setIniciado(true)} />
+      </div>
+    );
+  }
+
   return (
-    <div className={`mx-auto w-full ${isResultadoVisible ? "max-w-6xl" : "max-w-3xl"}`}>
-      {etapaAtual < 6 && !isLoading && (
+    <div className={`mx-auto w-full ${isTelaLarga ? "max-w-6xl" : "max-w-3xl"}`}>
+      <div ref={topoRef} aria-hidden="true" className="h-0 scroll-mt-24" />
+      {!isResultado && !isLoading && (
         <div className="mb-9">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-brand-950/40">
-              Etapa {etapaAtual} de 5
+              Etapa {indiceEtapa + 1} de {totalPerguntas}
             </p>
             <p className="text-xs font-bold text-primary-700">{Math.round(progressoPercent)}% completo</p>
           </div>
@@ -243,26 +311,29 @@ export function DiagnosticoWizard({ onResultadoVisibleChange }: Props) {
             />
           </div>
 
-          <div className="mt-4 grid grid-cols-5 gap-1">
-            {ETAPAS.filter((e) => e.num < 6).map((etapa) => (
+          <div
+            className="mt-4 grid gap-1"
+            style={{ gridTemplateColumns: `repeat(${etapasBarra.length}, minmax(0, 1fr))` }}
+          >
+            {etapasBarra.map((key, index) => (
               <div
-                key={etapa.num}
+                key={key}
                 className={`truncate text-center text-[10px] font-semibold transition-colors ${
-                  etapa.num < etapaAtual
+                  index < indiceEtapa
                     ? "text-primary-700"
-                    : etapa.num === etapaAtual
+                    : index === indiceEtapa
                     ? "text-blue-brand-950"
                     : "text-blue-brand-950/30"
                 }`}
               >
-                {etapa.label}
+                {ETAPA_META[key as Exclude<EtapaKey, "resultado">].label}
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {etapaAtual < 6 && !isLoading && copy && (
+      {!isResultado && !isLoading && copy && (
         <motion.div
           key={`title-${etapaAtual}`}
           initial={{ opacity: 0, y: 10 }}
@@ -287,39 +358,67 @@ export function DiagnosticoWizard({ onResultadoVisibleChange }: Props) {
           </motion.div>
         ) : (
           <motion.div
-            key={etapaAtual}
+            key={`${etapaAtual}-${etapaAtual === "resultado" ? resultView : ""}`}
             initial={{ opacity: 0, x: 18 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -18 }}
             transition={{ duration: 0.28 }}
           >
-            {etapaAtual === 1 && <Etapa1Form onNext={avancarEtapa} />}
-            {etapaAtual === 2 && (
+            {etapaAtual === "renda" && <Etapa1Form onNext={avancarEtapa} onBack={voltarEtapa} />}
+            {etapaAtual === "patrimonio" && (
               <Etapa2Form onNext={avancarEtapa} onBack={voltarEtapa} gastosMensais={dados.gastos_mensais || 0} />
             )}
-            {etapaAtual === 3 && <Etapa3Form onNext={avancarEtapa} onBack={voltarEtapa} />}
-            {etapaAtual === 4 && (
+            {etapaAtual === "objetivos" && (
+              <Etapa3Form onNext={avancarEtapa} onBack={voltarEtapa} podeVoltar={indiceEtapa > 0} />
+            )}
+            {etapaAtual === "detalhes" && (
               <Etapa4DetalhesObjetivos
                 onNext={avancarEtapa}
                 onBack={voltarEtapa}
                 objetivos={dados.objetivos_selecionados ?? []}
               />
             )}
-            {etapaAtual === 5 && <Etapa5Form onNext={submeter} onBack={voltarEtapa} isLoading={isLoading} />}
-            {etapaAtual === 6 && planoEspecifico && (
+            {etapaAtual === "comparativo" && (
+              <EtapaComparativoInvestir dados={dados} onNext={() => avancarEtapa()} onBack={voltarEtapa} />
+            )}
+            {etapaAtual === "investimentos" && (
+              <EtapaInvestimentosForm
+                // O total investido informado aqui vira também o patrimônio do plano
+                // (evita a pergunta duplicada na etapa anterior).
+                onNext={(data) => avancarEtapa({ ...data, patrimonio_total: data.valor_investido })}
+                onBack={voltarEtapa}
+              />
+            )}
+            {etapaAtual === "risco" && (
+              <Etapa5Form onNext={submeter} onBack={voltarEtapa} isLoading={isLoading} />
+            )}
+
+            {isResultado && planoEspecifico && (
               <OutputEspecifico plano={planoEspecifico} onBack={() => setPlanoEspecifico(null)} />
             )}
-            {etapaAtual === 6 && resultado && !planoEspecifico && (
+            {isResultado && resultado && !planoEspecifico && resultView === "cenarios" && (
+              <CenariosCarteiras
+                dados={dados}
+                perfil={perfil}
+                onVerRecomendacao={() => setResultView("plano")}
+              />
+            )}
+            {isResultado && resultado && !planoEspecifico && resultView === "plano" && (
               <OutputGenerico
                 resultado={resultado}
                 dadosCompletos={dados}
                 onUnlock={desbloquearPlano}
                 isUnlocking={isUnlocking}
+                investeAtualmente={dados.investe_atualmente}
+                perfil={perfil}
+                exibirDisclaimerReserva={dados.investe_atualmente !== "nao"}
               />
             )}
           </motion.div>
         )}
       </AnimatePresence>
+
+      <GuiaChat etapaKey={chatEtapaKey} extras={chatExtras} />
 
       <ErrorModal
         isOpen={!!activeError}
@@ -330,4 +429,3 @@ export function DiagnosticoWizard({ onResultadoVisibleChange }: Props) {
     </div>
   );
 }
-
